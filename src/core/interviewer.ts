@@ -102,6 +102,10 @@ function buildInterviewPrompt(analysis: AnalysisResult): string {
     `- Monorepo: ${analysis.structure.hasMonorepo ? 'Yes' : 'No'}`,
     `- Existing CLAUDE.md: ${analysis.existing.hasClaudeMd ? 'Yes' : 'No'}`,
     `- Existing .claude/: ${analysis.existing.hasClaude ? 'Yes' : 'No'}`,
+    `- Existing .claude/skills: ${analysis.existing.claudeSkills.length > 0 ? analysis.existing.claudeSkills.join(', ') : 'None'}`,
+    `- Existing .claude/commands: ${analysis.existing.claudeCommands.length > 0 ? analysis.existing.claudeCommands.join(', ') : 'None'}`,
+    `- Existing settings.json: ${analysis.existing.claudeSettings ? 'Yes (will be merged)' : 'No'}`,
+    `- Global ~/.claude/skills: ${analysis.existing.globalSkills.length > 0 ? analysis.existing.globalSkills.join(', ') : 'None'}`,
     ``,
     `Please ask me a few questions to determine the best setup, then provide your recommendation as JSON.`,
   ];

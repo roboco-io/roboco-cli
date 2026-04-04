@@ -20,6 +20,11 @@ export interface ExistingConfig {
   hasOmc: boolean;
   hasRoboco: boolean;
   hasOpenSpec: boolean;
+  claudeSettings: Record<string, unknown> | null;
+  claudeSkills: string[];
+  claudeCommands: string[];
+  globalSettings: Record<string, unknown> | null;
+  globalSkills: string[];
 }
 
 export interface GitInfo {

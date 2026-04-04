@@ -109,6 +109,9 @@ async function scanStructure(path: string): Promise<RepoStructure> {
 }
 
 async function checkExisting(path: string): Promise<ExistingConfig> {
+  const { homedir } = await import('node:os');
+  const home = homedir();
+
   const [hasClaude, hasClaudeMd, hasOmc, hasRoboco, hasOpenSpec] = await Promise.all([
     fileExists(join(path, '.claude')),
     fileExists(join(path, 'CLAUDE.md')),
@@ -116,7 +119,45 @@ async function checkExisting(path: string): Promise<ExistingConfig> {
     fileExists(join(path, '.roboco')),
     fileExists(join(path, 'openspec')),
   ]);
-  return { hasClaude, hasClaudeMd, hasOmc, hasRoboco, hasOpenSpec };
+
+  // Read project .claude/ contents
+  const claudeSettings = await readJsonSafe(join(path, '.claude', 'settings.json'));
+  const claudeSkills = await listDirNames(join(path, '.claude', 'skills'));
+  const claudeCommands = await listDirNames(join(path, '.claude', 'commands'));
+
+  // Read global ~/.claude/ contents
+  const globalSettings = await readJsonSafe(join(home, '.claude', 'settings.json'));
+  const globalSkills = await listDirNames(join(home, '.claude', 'skills'));
+
+  return {
+    hasClaude,
+    hasClaudeMd,
+    hasOmc,
+    hasRoboco,
+    hasOpenSpec,
+    claudeSettings,
+    claudeSkills,
+    claudeCommands,
+    globalSettings,
+    globalSkills,
+  };
+}
+
+async function readJsonSafe(path: string): Promise<Record<string, unknown> | null> {
+  try {
+    return await readJson<Record<string, unknown>>(path);
+  } catch {
+    return null;
+  }
+}
+
+async function listDirNames(path: string): Promise<string[]> {
+  try {
+    const entries = await readdir(path, { withFileTypes: true });
+    return entries.filter((e) => e.isDirectory()).map((e) => e.name);
+  } catch {
+    return [];
+  }
 }
 
 async function getGitInfo(path: string): Promise<GitInfo> {

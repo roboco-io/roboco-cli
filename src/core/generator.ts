@@ -8,6 +8,7 @@ interface FileOperation {
   path: string;
   content: string;
   description: string;
+  overwrite?: boolean;
 }
 
 export async function generate(
@@ -40,7 +41,7 @@ export async function generate(
 
   const created: string[] = [];
   for (const file of files) {
-    if (await fileExists(file.path)) {
+    if ((await fileExists(file.path)) && !file.overwrite) {
       logger.warn(`Skipped (exists): ${relative(targetPath, file.path)}`);
       continue;
     }
@@ -136,7 +137,7 @@ Run \`roboco status\` to check setup, \`roboco audit\` for maturity scoring.
 
 function generateClaudeSettings(targetPath: string, analysis: AnalysisResult): FileOperation[] {
   const hooks = generateHooksForStack(analysis.stack.languages);
-  const settings = {
+  const robocoDefaults: Record<string, unknown> = {
     permissions: {
       allow: [
         'Read',
@@ -154,13 +155,52 @@ function generateClaudeSettings(targetPath: string, analysis: AnalysisResult): F
     ...(Object.keys(hooks).length > 0 ? { hooks } : {}),
   };
 
+  // Merge with existing settings instead of overwriting
+  const existing = analysis.existing.claudeSettings;
+  const merged = existing ? deepMergeSettings(existing, robocoDefaults) : robocoDefaults;
+
   return [
     {
       path: join(targetPath, '.claude', 'settings.json'),
-      content: JSON.stringify(settings, null, 2) + '\n',
+      content: JSON.stringify(merged, null, 2) + '\n',
       description: '.claude/settings.json',
+      overwrite: true,
     },
   ];
+}
+
+function deepMergeSettings(
+  existing: Record<string, unknown>,
+  defaults: Record<string, unknown>,
+): Record<string, unknown> {
+  const result = { ...existing };
+
+  for (const [key, value] of Object.entries(defaults)) {
+    if (key === 'permissions' && result[key] && typeof result[key] === 'object') {
+      // Merge permission arrays (union, no duplicates)
+      const existingPerms = result[key] as Record<string, unknown>;
+      const defaultPerms = value as Record<string, unknown>;
+      result[key] = {
+        allow: mergeArrays(
+          (existingPerms['allow'] as string[]) ?? [],
+          (defaultPerms['allow'] as string[]) ?? [],
+        ),
+        deny: mergeArrays(
+          (existingPerms['deny'] as string[]) ?? [],
+          (defaultPerms['deny'] as string[]) ?? [],
+        ),
+      };
+    } else if (!(key in result)) {
+      // Only add keys that don't exist — don't overwrite user's config
+      result[key] = value;
+    }
+  }
+
+  return result;
+}
+
+function mergeArrays(a: string[], b: string[]): string[] {
+  return [...new Set([...a, ...b])];
 }
 
 function generateHooksForStack(languages: string[]): Record<string, unknown> {
