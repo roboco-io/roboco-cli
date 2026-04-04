@@ -1,5 +1,12 @@
 # ROBOCO CLI
 
+[![CI](https://github.com/roboco-io/roboco-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/roboco-io/roboco-cli/actions/workflows/ci.yml)
+[![GitHub release](https://img.shields.io/github/v/release/roboco-io/roboco-cli?include_prereleases)](https://github.com/roboco-io/roboco-cli/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-purple)](https://claude.com/claude-code)
+
 > AI-native development scaffolding system for vibe coding with Claude Code
 
 ROBOCO CLI sets up your repository for optimal vibe coding by analyzing your project, conducting an AI-powered interview, and generating a tailored configuration — so every team member works under the same AI-assisted development rules.
