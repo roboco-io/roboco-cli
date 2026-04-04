@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.tsbuildinfo
+.env
+.env.local
+coverage/
+.omc/state/
+.omc/sessions/
+.omc/logs/
+.omc/notepad.md
+.codex/state/
