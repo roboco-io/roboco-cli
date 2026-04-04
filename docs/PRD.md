@@ -37,33 +37,33 @@ npx roboco init [path]
 
 ### 4.1 Claude Code 환경 (필수)
 
-| 산출물 | 설명 |
-|--------|------|
-| `CLAUDE.md` | 리포 특성에 맞는 AI 맞춤 컨텍스트 문서 (커뮤니티 표준 구조 적용) |
-| `.claude/` | settings, commands, skills 디렉토리 구성 |
-| Claude Code Hooks | `.claude/settings.json`에 스택별 hooks 템플릿 자동 생성 (lint/format/typecheck 자동화) |
-| MCP 서버 설정 | 필요한 MCP 서버 자동 구성 |
-| oh-my-claudecode (OMC) | 통째 설치 (dependency) |
+| 산출물 | 설명 | How (구현 방법론) |
+|--------|------|-----------------|
+| `CLAUDE.md` | 리포 특성에 맞는 AI 맞춤 컨텍스트 문서 | `claude /init` (headless)로 생성 → `<roboco>` 태그로 ROBOCO 컨텍스트 append. 직접 생성 금지 |
+| `.claude/settings.json` | 권한, hooks 설정 | JSON 직접 생성 (ROBOCO 고유 스키마) |
+| Claude Code Hooks | 스택별 lint/format 자동화 | 스택 감지 결과 기반으로 hooks 템플릿 렌더링 (TS→prettier, Py→black, Go→gofmt) |
+| MCP 서버 설정 | 필요한 MCP 서버 자동 구성 | `claude mcp add` CLI 위임. 직접 설정 파일 쓰기 금지 |
+| oh-my-claudecode (OMC) | 멀티에이전트 오케스트레이션 | `claude plugin install` CLI 위임 |
 
 ### 4.2 프로세스 문서 (선택)
 
-| 산출물 | 설명 |
-|--------|------|
-| 바이브 코딩 5단계 템플릿 | 의도전달 → 요건정의 → 조사 → 계획 → 구현 |
-| OpenSpec | 프로세스 문서화 프레임워크 |
+| 산출물 | 설명 | How |
+|--------|------|-----|
+| 바이브 코딩 5단계 템플릿 | 의도전달 → 요건정의 → 조사 → 계획 → 구현 | 정적 마크다운 템플릿 복사 (ROBOCO 고유 콘텐츠) |
+| OpenSpec | 프로세스 문서화 프레임워크 | openspec CLI/config 위임 |
 
 각 단계별로 문서를 남기고 언제든지 원하는 단계부터 다시 시작할 수 있어야 한다.
 
 ### 4.3 CI/CD 파이프라인 (선택)
 
-| 산출물 | 설명 |
-|--------|------|
-| pre-commit hooks | 바이브 코딩 규칙 강제 |
-| GitHub Actions 워크플로우 | CI에서 규칙 검증 자동화 |
+| 산출물 | 설명 | How |
+|--------|------|-----|
+| pre-commit hooks | 바이브 코딩 규칙 강제 | `husky` 위임. `.husky/pre-commit` 생성, 직접 .git/hooks 조작 금지 |
+| GitHub Actions 워크플로우 | CI에서 규칙 검증 자동화 | 정적 YAML 템플릿 복사 (ROBOCO 고유 워크플로우) |
 
 ### 4.4 스택 분석 및 최적화 (자동)
 
-- 리포의 기술 스택 자동 감지
+- 리포의 기술 스택 자동 감지 (ROBOCO 고유 기능 — package.json, pyproject.toml, go.mod 등 파싱)
 - 언어 비의존 공통 설정 기반으로 스택별 최적화된 설정 제공
 
 ## 5. 명령어

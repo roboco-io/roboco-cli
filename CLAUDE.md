@@ -67,3 +67,19 @@ src/
 - `init` = first-time setup with interview, `install` = team member applies existing config
 - `doctor` checks ROBOCO CLI itself, `status` checks target repo setup
 - No `lint` command — static validation of vibe coding "correctness" is impractical
+- CLAUDE.md generation delegates to `claude /init`, not custom implementation
+
+## Anti-Reinvention Rule
+
+Before implementing any feature, check if it already exists in:
+1. **Claude Code built-in** — `/init`, `/compact`, `/review`, built-in tools (Read, Write, Glob, Grep, Bash)
+2. **Claude Code SDK / Agent SDK** — `query()`, hooks, permissions, MCP
+3. **OMC** — agents, skills, workflows (ralph, autopilot, ultrawork)
+4. **npm ecosystem** — established packages for common tasks
+
+If existing functionality covers 80%+ of the need, **wrap/delegate** instead of reimplementing.
+Concrete examples:
+- CLAUDE.md generation → `claude /init` (headless) + `<roboco>` tag append
+- AI conversation → `@anthropic-ai/claude-agent-sdk` `query()`, not raw API
+- MCP server install → `claude mcp add`, not custom installer
+- Git hooks → `husky`, not custom scripts

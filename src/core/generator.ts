@@ -1,6 +1,7 @@
 import { join } from 'node:path';
+import { execa } from 'execa';
 import type { AnalysisResult, InterviewResult, RobocoConfig } from '../types/index.js';
-import { ensureDir, fileExists, writeText } from '../utils/fs.js';
+import { ensureDir, fileExists, writeText, readText } from '../utils/fs.js';
 import { logger } from '../utils/logger.js';
 
 interface FileOperation {
@@ -17,7 +18,12 @@ export async function generate(
   const files: FileOperation[] = [];
 
   // Claude Code Environment (required)
-  files.push(...generateClaudeEnv(targetPath, analysis, interviewResult));
+  // Step 1: Run claude /init to generate base CLAUDE.md
+  await runClaudeInit(targetPath);
+  // Step 2: Append ROBOCO context + generate settings/hooks
+  await appendRobocoContext(targetPath, analysis, interviewResult);
+  // Step 3: Generate .claude/settings.json and hooks
+  files.push(...generateClaudeSettings(targetPath, analysis));
 
   // Process Documents (optional)
   if (interviewResult.setupDomains.processDocs) {
@@ -51,50 +57,84 @@ function relative(base: string, full: string): string {
   return full.startsWith(base) ? full.slice(base.length + 1) : full;
 }
 
-function generateClaudeEnv(
+async function runClaudeInit(targetPath: string): Promise<void> {
+  const claudeMdPath = join(targetPath, 'CLAUDE.md');
+  if (await fileExists(claudeMdPath)) {
+    logger.info('CLAUDE.md already exists — skipping claude /init');
+    return;
+  }
+
+  try {
+    await execa('claude', ['/init'], {
+      cwd: targetPath,
+      timeout: 30000,
+      env: { ...process.env, CLAUDE_CODE_HEADLESS: '1' },
+      stdin: 'ignore',
+    });
+    // Verify claude /init actually created the file
+    if (await fileExists(claudeMdPath)) {
+      logger.success('CLAUDE.md generated via claude /init');
+      return;
+    }
+  } catch {
+    // Fall through to template generation
+  }
+
+  logger.warn('claude /init did not produce CLAUDE.md — generating template');
+  const { basename } = await import('node:path');
+  await writeText(
+    claudeMdPath,
+    `# ${basename(targetPath)}\n\n## Project Overview\n\nDescribe your project here.\n`,
+  );
+}
+
+async function appendRobocoContext(
   targetPath: string,
   analysis: AnalysisResult,
-  _interviewResult: InterviewResult,
-): FileOperation[] {
-  const files: FileOperation[] = [];
-  const projectName = analysis.git.repoName ?? 'My Project';
-  const stackList =
-    [...analysis.stack.languages, ...analysis.stack.frameworks].join(', ') || 'Not detected';
+  interviewResult: InterviewResult,
+): Promise<void> {
+  const claudeMdPath = join(targetPath, 'CLAUDE.md');
+  if (!(await fileExists(claudeMdPath))) return;
 
-  files.push({
-    path: join(targetPath, 'CLAUDE.md'),
-    content: `# ${projectName}
+  const existing = await readText(claudeMdPath);
+  if (existing.includes('<roboco>')) {
+    logger.info('ROBOCO context already present in CLAUDE.md — skipping');
+    return;
+  }
 
-## Project Overview
-<!-- Describe your project here -->
+  const tools = Object.entries(interviewResult.tools)
+    .filter(([, v]) => v)
+    .map(([k]) => k)
+    .join(', ');
 
-## Tech Stack
-${stackList}
-
-## Development Commands
-\`\`\`bash
-# Build
-# Test
-# Lint
-\`\`\`
-
-## Coding Conventions
-<!-- Add your coding conventions here -->
-
+  const robocoBlock = `
+<roboco>
 ## Vibe Coding Process
-This project follows the 5-stage vibe coding process:
+
+This project uses ROBOCO for AI-native development with the 5-stage vibe coding process:
 1. **Intent** — Communicate what you want to build
 2. **Requirements** — Define requirements through deep interview
 3. **Research** — Investigate approaches and tools
 4. **Plan** — Create an implementation plan
 5. **Implement** — Build with AI assistance
 
-## Non-Goals
-<!-- List things explicitly out of scope -->
-`,
-    description: 'CLAUDE.md',
-  });
+Each stage produces documents in \`docs/vibe-coding/\`. You can restart from any stage.
 
+## ROBOCO Configuration
+
+- **Stack**: ${[...analysis.stack.languages, ...analysis.stack.frameworks].join(', ') || 'Not detected'}
+- **Tools**: ${tools}
+- **Config**: \`.roboco/config.json\`
+
+Run \`roboco status\` to check setup, \`roboco audit\` for maturity scoring.
+</roboco>
+`;
+
+  await writeText(claudeMdPath, existing.trimEnd() + '\n' + robocoBlock);
+  logger.success('ROBOCO context appended to CLAUDE.md');
+}
+
+function generateClaudeSettings(targetPath: string, analysis: AnalysisResult): FileOperation[] {
   const hooks = generateHooksForStack(analysis.stack.languages);
   const settings = {
     permissions: {
@@ -114,13 +154,13 @@ This project follows the 5-stage vibe coding process:
     ...(Object.keys(hooks).length > 0 ? { hooks } : {}),
   };
 
-  files.push({
-    path: join(targetPath, '.claude', 'settings.json'),
-    content: JSON.stringify(settings, null, 2) + '\n',
-    description: '.claude/settings.json',
-  });
-
-  return files;
+  return [
+    {
+      path: join(targetPath, '.claude', 'settings.json'),
+      content: JSON.stringify(settings, null, 2) + '\n',
+      description: '.claude/settings.json',
+    },
+  ];
 }
 
 function generateHooksForStack(languages: string[]): Record<string, unknown> {

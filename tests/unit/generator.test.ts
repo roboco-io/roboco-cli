@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, readFile, mkdir } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { generate } from '../../src/core/generator.js';
@@ -56,6 +56,11 @@ function makeInterview(overrides: Partial<InterviewResult> = {}): InterviewResul
   };
 }
 
+// Pre-create CLAUDE.md to skip `claude /init` in tests
+async function seedClaudeMd(dir: string): Promise<void> {
+  await writeFile(join(dir, 'CLAUDE.md'), '# Test Project\n\n## Overview\nTest project.\n');
+}
+
 describe('generator', () => {
   let tempDir: string;
 
@@ -67,16 +72,19 @@ describe('generator', () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 
-  it('generates CLAUDE.md with project name from git', async () => {
+  it('appends roboco context to existing CLAUDE.md', async () => {
+    await seedClaudeMd(tempDir);
     const analysis = makeAnalysis({ path: tempDir });
-    const created = await generate(tempDir, analysis, makeInterview());
+    await generate(tempDir, analysis, makeInterview());
     const claudeMd = await readFile(join(tempDir, 'CLAUDE.md'), 'utf-8');
-    expect(claudeMd).toContain('# repo');
+    expect(claudeMd).toContain('# Test Project');
+    expect(claudeMd).toContain('<roboco>');
     expect(claudeMd).toContain('TypeScript');
-    expect(created.length).toBeGreaterThanOrEqual(2);
+    expect(claudeMd).toContain('</roboco>');
   });
 
   it('generates .claude/settings.json with hooks for TypeScript', async () => {
+    await seedClaudeMd(tempDir);
     const analysis = makeAnalysis({ path: tempDir });
     await generate(tempDir, analysis, makeInterview());
     const settings = JSON.parse(await readFile(join(tempDir, '.claude', 'settings.json'), 'utf-8'));
@@ -85,6 +93,7 @@ describe('generator', () => {
   });
 
   it('generates Python hooks for Python projects', async () => {
+    await seedClaudeMd(tempDir);
     const analysis = makeAnalysis({
       path: tempDir,
       stack: {
@@ -101,6 +110,7 @@ describe('generator', () => {
   });
 
   it('generates process docs when selected', async () => {
+    await seedClaudeMd(tempDir);
     const analysis = makeAnalysis({ path: tempDir });
     const interview = makeInterview({
       setupDomains: { claudeEnv: true, processDocs: true, cicd: false },
@@ -114,7 +124,8 @@ describe('generator', () => {
     expect(created.some((f) => f.includes('01-intent.md'))).toBe(true);
   });
 
-  it('generates CI/CD when selected', async () => {
+  it('generates CI/CD with pre-commit hook when selected', async () => {
+    await seedClaudeMd(tempDir);
     const analysis = makeAnalysis({ path: tempDir });
     const interview = makeInterview({
       setupDomains: { claudeEnv: true, processDocs: false, cicd: true },
@@ -125,9 +136,12 @@ describe('generator', () => {
       'utf-8',
     );
     expect(workflow).toContain('CLAUDE.md');
+    const hook = await readFile(join(tempDir, '.husky', 'pre-commit'), 'utf-8');
+    expect(hook).toContain('lint-staged');
   });
 
   it('generates .roboco/config.json', async () => {
+    await seedClaudeMd(tempDir);
     const analysis = makeAnalysis({ path: tempDir });
     await generate(tempDir, analysis, makeInterview());
     const config = JSON.parse(await readFile(join(tempDir, '.roboco', 'config.json'), 'utf-8'));
@@ -135,15 +149,14 @@ describe('generator', () => {
     expect(config.interview.tools.omc).toBe(true);
   });
 
-  it('skips existing files without overwriting', async () => {
+  it('does not duplicate roboco context on re-run', async () => {
+    await seedClaudeMd(tempDir);
     const analysis = makeAnalysis({ path: tempDir });
-    await mkdir(join(tempDir, '.claude'), { recursive: true });
-    const original = '# Original content';
-    const { writeFile: wf } = await import('node:fs/promises');
-    await wf(join(tempDir, 'CLAUDE.md'), original);
-
-    await generate(tempDir, analysis, makeInterview());
+    const interview = makeInterview();
+    await generate(tempDir, analysis, interview);
+    await generate(tempDir, analysis, interview);
     const content = await readFile(join(tempDir, 'CLAUDE.md'), 'utf-8');
-    expect(content).toBe(original);
+    const count = (content.match(/<roboco>/g) || []).length;
+    expect(count).toBe(1);
   });
 });

@@ -52,7 +52,7 @@ export async function auditCommand(options: AuditOptions): Promise<void> {
 
 async function auditClaudeEnv(
   targetPath: string,
-  analysis: ReturnType<typeof analyze> extends Promise<infer T> ? T : never,
+  _analysis: ReturnType<typeof analyze> extends Promise<infer T> ? T : never,
 ): Promise<AuditCategory> {
   const cat: AuditCategory = {
     name: 'Claude Code Environment',

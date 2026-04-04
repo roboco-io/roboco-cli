@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import ora from 'ora';
 import { fileExists, readJson, writeJson } from '../utils/fs.js';
-import { installTools, printInstallReport } from '../core/installer.js';
+import { installTools } from '../core/installer.js';
 import { logger } from '../utils/logger.js';
 import type { RobocoConfig, ToolSelection } from '../types/index.js';
 
