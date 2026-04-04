@@ -56,11 +56,11 @@ export async function statusCommand(path: string | undefined, options: StatusOpt
   }
 }
 
-function printText(
+async function printText(
   items: Array<{ label: string; ok: boolean; detail: string }>,
   stack: string,
   configPath: string | null,
-): void {
+): Promise<void> {
   logger.plain('ROBOCO Status Report');
   logger.plain('═══════════════════');
   logger.blank();
@@ -75,10 +75,11 @@ function printText(
   logger.plain(`  Stack: ${stack}`);
 
   if (configPath) {
-    readJson<RobocoConfig>(configPath).then((config) => {
+    try {
+      const config = await readJson<RobocoConfig>(configPath);
       logger.plain(`  Initialized: ${config.createdAt.split('T')[0]}`);
       logger.plain(`  Last updated: ${config.updatedAt.split('T')[0]}`);
-    }).catch(() => { /* ignore */ });
+    } catch { /* config may be corrupted */ }
   }
 }
 

@@ -21,7 +21,8 @@ export async function configCommand(options: { get?: string; set?: string; reset
     const value = valueParts.join('=');
     if (!key || value === undefined) {
       logger.error('Usage: roboco config --set key=value');
-      process.exit(1);
+      process.exitCode = 1;
+    return;
     }
     setNestedValue(config, key, parseValue(value));
     await writeJson(CONFIG_PATH, config);
@@ -33,7 +34,8 @@ export async function configCommand(options: { get?: string; set?: string; reset
     const value = getNestedValue(config, options.get);
     if (value === undefined) {
       logger.error(`Key "${options.get}" not found`);
-      process.exit(1);
+      process.exitCode = 1;
+    return;
     }
     logger.plain(typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value));
     return;
@@ -69,8 +71,13 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
   }, obj);
 }
 
+const FORBIDDEN_KEYS = ['__proto__', 'constructor', 'prototype'];
+
 function setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
   const keys = path.split('.');
+  if (keys.some((k) => FORBIDDEN_KEYS.includes(k))) {
+    throw new Error(`Forbidden config key: ${path}`);
+  }
   const last = keys.pop()!;
   let current: Record<string, unknown> = obj;
   for (const key of keys) {

@@ -12,7 +12,8 @@ export async function installCommand(path: string | undefined): Promise<void> {
   if (!(await fileExists(configPath))) {
     logger.error('This repository has not been initialized with ROBOCO.');
     logger.info('Run "roboco init" first to set up the vibe coding environment.');
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   const spinner = ora('Reading configuration...').start();

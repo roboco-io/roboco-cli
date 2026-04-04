@@ -30,7 +30,8 @@ export async function initCommand(path: string | undefined, options: InitOptions
   } catch (err) {
     spinner.fail('Analysis failed');
     logger.error(err instanceof Error ? err.message : String(err));
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
   spinner.succeed('Repository analyzed');
 

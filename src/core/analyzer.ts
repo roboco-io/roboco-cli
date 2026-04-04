@@ -1,6 +1,7 @@
 import { readdir, access } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileExists, readJson } from '../utils/fs.js';
+import { logger } from '../utils/logger.js';
 import { isGitRepo, getRemoteUrl, getRepoName, getBranch } from '../utils/git.js';
 import type { AnalysisResult, StackInfo, RepoStructure, ExistingConfig, GitInfo } from '../types/index.js';
 
@@ -49,7 +50,7 @@ async function detectStack(path: string): Promise<StackInfo> {
       for (const [dep, name] of Object.entries(frameworkMap)) {
         if (allDeps[dep] || allDeps[`@${dep}/core`]) info.frameworks.push(name);
       }
-    } catch { /* ignore parse errors */ }
+    } catch { logger.debug('Failed to parse package.json'); }
 
     if (await fileExists(join(path, 'pnpm-lock.yaml'))) info.packageManager = 'pnpm';
     else if (await fileExists(join(path, 'yarn.lock'))) info.packageManager = 'yarn';
