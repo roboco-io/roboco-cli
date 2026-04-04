@@ -6,6 +6,9 @@ import { updateCommand } from './commands/update.js';
 import { statusCommand } from './commands/status.js';
 import { doctorCommand } from './commands/doctor.js';
 import { configCommand } from './commands/config.js';
+import { addCommand } from './commands/add.js';
+import { syncCommand } from './commands/sync.js';
+import { validateCommand } from './commands/validate.js';
 
 const program = new Command();
 
@@ -49,10 +52,7 @@ program
   .option('--format <type>', 'Output format: text, markdown', 'text')
   .action(statusCommand);
 
-program
-  .command('doctor')
-  .description('Diagnose ROBOCO CLI health')
-  .action(doctorCommand);
+program.command('doctor').description('Diagnose ROBOCO CLI health').action(doctorCommand);
 
 program
   .command('config')
@@ -61,5 +61,26 @@ program
   .option('--set <key=value>', 'Set a config value')
   .option('--reset', 'Reset to defaults')
   .action(configCommand);
+
+program
+  .command('add')
+  .argument('[integration]', 'Integration to add (e.g., openspec, exa, github, context7, harness)')
+  .description('Add an integration to existing ROBOCO setup')
+  .option('--path <dir>', 'Target repository path', '.')
+  .action(addCommand);
+
+program
+  .command('sync')
+  .description('Check configuration drift against current repo state')
+  .option('--check', 'Exit with error code if drift detected (for CI)')
+  .option('--path <dir>', 'Target repository path', '.')
+  .action(syncCommand);
+
+program
+  .command('validate')
+  .description('Validate vibe coding setup end-to-end')
+  .option('--fix', 'Attempt to fix issues')
+  .option('--path <dir>', 'Target repository path', '.')
+  .action(validateCommand);
 
 program.parse();

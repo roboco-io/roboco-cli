@@ -26,7 +26,7 @@ export async function generate(
 
   // CI/CD (optional)
   if (interviewResult.setupDomains.cicd) {
-    files.push(...generateCicd(targetPath));
+    files.push(...generateCicd(targetPath, analysis));
   }
 
   // ROBOCO config
@@ -191,11 +191,13 @@ function generateProcessDocs(targetPath: string): FileOperation[] {
   }));
 }
 
-function generateCicd(targetPath: string): FileOperation[] {
-  return [
-    {
-      path: join(targetPath, '.github', 'workflows', 'vibe-coding-check.yml'),
-      content: `name: Vibe Coding Check
+function generateCicd(targetPath: string, analysis: AnalysisResult): FileOperation[] {
+  const files: FileOperation[] = [];
+
+  // GitHub Actions workflow
+  files.push({
+    path: join(targetPath, '.github', 'workflows', 'vibe-coding-check.yml'),
+    content: `name: Vibe Coding Check
 
 on:
   pull_request:
@@ -211,9 +213,31 @@ jobs:
       - name: Check .claude directory
         run: test -d .claude
 `,
-      description: 'GitHub Actions workflow',
-    },
-  ];
+    description: 'GitHub Actions workflow',
+  });
+
+  // Pre-commit hook via husky
+  const lintCmd = getLintCommand(analysis.stack.languages);
+  files.push({
+    path: join(targetPath, '.husky', 'pre-commit'),
+    content: `${lintCmd}\n`,
+    description: 'Pre-commit hook',
+  });
+
+  return files;
+}
+
+function getLintCommand(languages: string[]): string {
+  if (languages.includes('TypeScript') || languages.includes('JavaScript')) {
+    return 'npx lint-staged';
+  } else if (languages.includes('Python')) {
+    return 'ruff check --fix . && ruff format .';
+  } else if (languages.includes('Go')) {
+    return 'gofmt -l . && go vet ./...';
+  } else if (languages.includes('Rust')) {
+    return 'cargo fmt --check && cargo clippy';
+  }
+  return 'echo "No lint configured"';
 }
 
 function generateRobocoConfig(

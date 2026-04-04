@@ -1,4 +1,4 @@
-import type { AnalysisResult, InterviewResult } from '../types/index.js';
+import type { AnalysisResult, InterviewResult, ToolSelection } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 import { confirm } from '../utils/prompt.js';
 
@@ -9,7 +9,14 @@ export async function interview(
   if (options.auto) {
     return autoInterview(analysis);
   }
-  return interactiveInterview(analysis);
+
+  // Try AI-powered interview first, fall back to interactive
+  try {
+    return await aiInterview(analysis);
+  } catch {
+    logger.warn('AI interview unavailable. Falling back to manual mode.');
+    return interactiveInterview(analysis);
+  }
 }
 
 function autoInterview(analysis: AnalysisResult): InterviewResult {
@@ -39,6 +46,103 @@ function autoInterview(analysis: AnalysisResult): InterviewResult {
       stack: analysis.stack,
     },
   };
+}
+
+async function aiInterview(analysis: AnalysisResult): Promise<InterviewResult> {
+  const { query } = await import('@anthropic-ai/claude-agent-sdk');
+
+  const systemPrompt = buildInterviewPrompt(analysis);
+
+  logger.blank();
+  logger.info('Starting AI-powered setup interview...');
+  logger.blank();
+
+  let resultJson = '';
+
+  for await (const message of query({
+    prompt: systemPrompt,
+    options: {
+      maxTurns: 10,
+      systemPrompt: `You are ROBOCO, an AI assistant that helps set up vibe coding environments.
+Analyze the repository information provided and ask the user targeted questions to determine the optimal setup.
+After gathering enough information, output a JSON block with your recommendations.
+
+IMPORTANT: When you have enough information, output your final recommendation as a JSON code block:
+\`\`\`json
+{
+  "setupDomains": { "claudeEnv": true, "processDocs": boolean, "cicd": boolean },
+  "tools": { "omc": true, "openspec": boolean, "exaAi": boolean, "perplexityAsk": boolean, "githubMcp": boolean, "context7": boolean, "harness": boolean },
+  "preferences": {}
+}
+\`\`\``,
+      allowedTools: [],
+      permissionMode: 'plan',
+    },
+  })) {
+    if ('result' in message) {
+      resultJson = message.result;
+    }
+  }
+
+  return parseAiResult(resultJson, analysis);
+}
+
+function buildInterviewPrompt(analysis: AnalysisResult): string {
+  const parts = [
+    `I want to set up a vibe coding environment for my repository.`,
+    ``,
+    `Repository analysis:`,
+    `- Path: ${analysis.path}`,
+    `- Languages: ${analysis.stack.languages.join(', ') || 'None detected'}`,
+    `- Frameworks: ${analysis.stack.frameworks.join(', ') || 'None'}`,
+    `- Package manager: ${analysis.stack.packageManager ?? 'None'}`,
+    `- TypeScript: ${analysis.stack.hasTypeScript ? 'Yes' : 'No'}`,
+    `- Git: ${analysis.git.isRepo ? `Yes (${analysis.git.repoName ?? 'local'})` : 'No'}`,
+    `- Remote: ${analysis.git.remoteUrl ?? 'None'}`,
+    `- Monorepo: ${analysis.structure.hasMonorepo ? 'Yes' : 'No'}`,
+    `- Existing CLAUDE.md: ${analysis.existing.hasClaudeMd ? 'Yes' : 'No'}`,
+    `- Existing .claude/: ${analysis.existing.hasClaude ? 'Yes' : 'No'}`,
+    ``,
+    `Please ask me a few questions to determine the best setup, then provide your recommendation as JSON.`,
+  ];
+  return parts.join('\n');
+}
+
+function parseAiResult(result: string, analysis: AnalysisResult): InterviewResult {
+  // Extract JSON from markdown code block
+  const jsonMatch = result.match(/```json\s*([\s\S]*?)```/);
+  if (jsonMatch?.[1]) {
+    try {
+      const parsed = JSON.parse(jsonMatch[1]) as {
+        setupDomains?: { claudeEnv?: boolean; processDocs?: boolean; cicd?: boolean };
+        tools?: Partial<ToolSelection>;
+        preferences?: Record<string, unknown>;
+      };
+      return {
+        setupDomains: {
+          claudeEnv: true,
+          processDocs: parsed.setupDomains?.processDocs ?? true,
+          cicd: parsed.setupDomains?.cicd ?? analysis.git.isRepo,
+        },
+        tools: {
+          omc: true,
+          openspec: parsed.tools?.openspec ?? false,
+          exaAi: parsed.tools?.exaAi ?? false,
+          perplexityAsk: parsed.tools?.perplexityAsk ?? false,
+          githubMcp: parsed.tools?.githubMcp ?? false,
+          context7: parsed.tools?.context7 ?? false,
+          harness: parsed.tools?.harness ?? false,
+        },
+        preferences: parsed.preferences ?? { aiGenerated: true },
+      };
+    } catch {
+      // Fall through to auto
+    }
+  }
+
+  // If AI result can't be parsed, fall back to auto
+  logger.warn('Could not parse AI recommendation. Using auto-generated setup.');
+  return autoInterview(analysis);
 }
 
 async function interactiveInterview(analysis: AnalysisResult): Promise<InterviewResult> {

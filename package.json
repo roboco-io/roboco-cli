@@ -51,6 +51,7 @@
   },
   "homepage": "https://github.com/roboco-io/roboco-cli#readme",
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.92",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
     "execa": "^9.6.1",
