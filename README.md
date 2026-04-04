@@ -65,6 +65,28 @@ ROBOCO turns full vibe coding from a risky experiment into a **governed, reprodu
 - **Actionable improvements** — Every audit finding comes with a specific suggestion
 - **Standards as code** — Vibe coding rules live in the repo, not in a wiki nobody reads
 
+## Architecture: Multi-Layer Verification Harness
+
+ROBOCO CLI sets up a 7-layer verification harness that governs the entire AI development lifecycle:
+
+<p align="center">
+  <img src="docs/harness-architecture.svg" alt="ROBOCO Multi-Layer Verification Harness" width="800" />
+</p>
+
+| Layer | Gate | What it enforces |
+|-------|------|-----------------|
+| 1 | Developer Intent | 5-stage vibe coding process (Intent → Requirements → Research → Plan → Implement) |
+| 2 | AI Code Generation | CLAUDE.md context, stack-specific hooks, OMC agents, Harness teams |
+| 3a | Pre-commit | lint-staged → ESLint + Prettier auto-format |
+| 3b | Pre-push | TypeCheck → Tests → AI Code Review (Claude Agent SDK) |
+| 4 | CI Pipeline | Lint, TypeCheck, Unit, Integration, E2E, Build + Smoke test |
+| 5 | Release Gate | Tag → Validate → npm publish → GitHub Release |
+| 6 | Repo Hygiene | Issue auto-label, stale management, drift detection |
+| 7 | Maturity Audit | 100-point scoring across 5 categories |
+- **Maturity scoring** — `roboco audit` quantifies your vibe coding setup across Claude Code env, process docs, quality gates, tool integration, and team consistency
+- **Actionable improvements** — Every audit finding comes with a specific suggestion
+- **Standards as code** — Vibe coding rules live in the repo, not in a wiki nobody reads
+
 ## Features
 
 - **AI-Powered Interview** — Analyzes your repo (stack, structure, existing config) then asks targeted questions via Claude Code SDK to customize the setup
