@@ -70,7 +70,7 @@ ROBOCO turns full vibe coding from a risky experiment into a **governed, reprodu
 ROBOCO CLI sets up a 7-layer verification harness that governs the entire AI development lifecycle:
 
 <p align="center">
-  <img src="docs/harness-architecture.svg" alt="ROBOCO Multi-Layer Verification Harness" width="800" />
+  <img src="docs/harness-architecture.svg?v=2" alt="ROBOCO Multi-Layer Verification Harness" width="800" />
 </p>
 
 | Layer | Gate | What it enforces |
