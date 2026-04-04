@@ -1,6 +1,6 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/roboco-logo.svg" />
+    <source media="(prefers-color-scheme: dark)" srcset="docs/roboco-logo-dark.svg" />
     <source media="(prefers-color-scheme: light)" srcset="docs/roboco-logo.svg" />
     <img src="docs/roboco-logo.svg" alt="ROBOCO" width="280" />
   </picture>
