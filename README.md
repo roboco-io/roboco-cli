@@ -229,6 +229,16 @@ npm run dev
 - Stack-specific configuration presets
 - Community preset/plugin ecosystem
 
+## Contributing
+
+This project is **100% vibe-coded** — every line of code, every test, every document has been written by AI agents. We welcome contributions from both humans and AI.
+
+- **Feature Requests** — Open an issue describing what you want. AI-generated FRs with detailed specs are welcome.
+- **Pull Requests** — AI-authored PRs are first-class citizens here. Whether you vibe-coded it with Claude Code, Cursor, Copilot, or any other AI tool, send it.
+- **Bug Reports** — Describe the issue. AI-generated reproduction steps are appreciated.
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commit conventions, and the anti-reinvention rule.
+
 ## License
 
 MIT
