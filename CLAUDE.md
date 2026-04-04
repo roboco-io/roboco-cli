@@ -12,7 +12,7 @@ ROBOCO CLI is an AI-native development scaffolding system that sets up repositor
 ## Tech Stack
 
 - TypeScript (strict, ESM only)
-- Node.js >= 20
+- Node.js >= 24
 - Commander.js (CLI framework)
 - @anthropic-ai/claude-code-sdk (AI interview)
 - tsup (build), vitest (test), ESLint + Prettier (lint)

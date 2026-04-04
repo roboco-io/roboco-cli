@@ -27,7 +27,7 @@
     "prepublishOnly": "npm run validate"
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   },
   "files": [
     "dist",
