@@ -140,6 +140,10 @@ Analyze and show recommendations without making any changes.
 | `roboco status [path]` | Report current vibe coding setup status |
 | `roboco doctor` | Diagnose ROBOCO CLI health (version, SDK, dependencies) |
 | `roboco config` | View and modify global ROBOCO configuration |
+| `roboco add <integration>` | Add a tool post-init (openspec, exa, github, context7, harness) |
+| `roboco sync [--check]` | Detect configuration drift (CI-friendly with `--check`) |
+| `roboco validate [--fix]` | End-to-end setup validation |
+| `roboco audit [--format]` | Vibe coding maturity scoring (100 points, 5 categories) |
 
 ## What Gets Generated
 
@@ -161,6 +165,7 @@ Analyze and show recommendations without making any changes.
 | Perplexity MCP | General web search and Q&A (fallback) |
 | GitHub MCP | Issue/PR management and code search |
 | Context7 MCP | Up-to-date library/framework documentation |
+| Harness | Domain-specific agent team design (6 architecture patterns) |
 | CI/CD pipeline | Pre-commit hooks + GitHub Actions workflows |
 | Process templates | 5-stage vibe coding document templates |
 
@@ -195,24 +200,33 @@ npm run dev
 
 ## Roadmap
 
-### MVP (v0.1) — Current
-- Core commands: `init`, `install`, `update`, `status`, `doctor`, `config`
-- AI interview-based custom setup
-- Stack-agnostic configuration with auto-detection
-- OMC integration + optional MCP servers
-- npm distribution
+### v0.1 — MVP
+- 6 core commands: `init`, `install`, `update`, `status`, `doctor`, `config`
+- AI interview (Claude Agent SDK) with auto/interactive/dryrun modes
+- Stack-agnostic configuration with auto-detection (7 languages, 9 frameworks)
+- OMC + MCP servers + Harness + OpenSpec integration
+- npm distribution (`npx roboco init`)
 
-### v0.2
+### v0.2 — Extensibility
 - `add`, `sync`, `validate` commands
-- Stack-specific configuration presets
-- Tier 2 MCP servers (Playwright, Snyk, PostgreSQL)
+- Pre-commit hook generation (stack-specific via husky)
+- CLAUDE.md delegates to `claude /init` + `<roboco>` context
 
-### v0.3
-- `audit` command (vibe coding maturity scoring)
-- OpenClaw-based automated issue response and release automation
+### v0.3 — Audit & Automation
+- `audit` command (100-point vibe coding maturity scoring)
+- Release automation (tag → validate → npm publish → GitHub Release)
+- Issue auto-labeling and stale management
+
+### v0.4 — Current
+- Existing `.claude/` and `~/.claude/` settings analysis and deep merge
+- AI code review on pre-push (Claude Agent SDK)
+- DESIGN.md, CONTRIBUTING.md, CHANGELOG.md, LICENSE
+- CI paths-ignore for non-executable changes
+- 62 tests (unit + integration + E2E)
 
 ### Future
 - `eject`, `share` commands
+- Stack-specific configuration presets
 - Community preset/plugin ecosystem
 
 ## License
@@ -223,4 +237,6 @@ MIT
 
 - [Product Requirements Document](docs/PRD.md)
 - [Research Report](docs/research-report.md)
-- [Ideation](docs/ideation.md)
+- [Quality Gates](docs/quality-gates.md)
+- [Changelog](CHANGELOG.md)
+- [Contributing](CONTRIBUTING.md)
