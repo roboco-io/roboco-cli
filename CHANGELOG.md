@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.4.0-beta.2 (2026-04-04)
+
+### Added
+- Analyze existing `.claude/settings.json` contents (not just existence check)
+- Read existing `.claude/skills/` and `.claude/commands/` directories
+- Read `~/.claude/` global settings and skills (user home config)
+- Deep merge settings.json — preserves existing permissions, hooks, MCP configs
+- Pass existing config details to AI interview for smarter recommendations
+- 11 new tests: settings merge unit tests + integration test with existing .claude/
+- README: enterprise full vibe coding positioning, problem/solution framing
+
+### Changed
+- Generator merges settings instead of overwriting — user's existing keys never lost
+- Permission arrays are unioned (no duplicates)
+- Release notes now extracted from CHANGELOG.md (fallback to git log)
+
 ## v0.4.0-beta.1 (2026-04-04)
 
 ### Added
