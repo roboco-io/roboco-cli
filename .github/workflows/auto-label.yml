@@ -1,0 +1,36 @@
+name: Auto Label Issues
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  issues: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-label by keywords
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const text = `${issue.title} ${issue.body || ''}`.toLowerCase();
+            const labels = [];
+
+            if (text.match(/bug|error|crash|fail|broken|fix/)) labels.push('bug');
+            if (text.match(/feature|enhancement|add|new|request/)) labels.push('enhancement');
+            if (text.match(/question|how|help|why/)) labels.push('question');
+            if (text.match(/doc|readme|documentation/)) labels.push('documentation');
+            if (text.match(/install|setup|init|config/)) labels.push('setup');
+            if (text.match(/agent|mcp|omc|harness|skill/)) labels.push('integrations');
+
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels,
+              });
+            }

@@ -9,6 +9,7 @@ import { configCommand } from './commands/config.js';
 import { addCommand } from './commands/add.js';
 import { syncCommand } from './commands/sync.js';
 import { validateCommand } from './commands/validate.js';
+import { auditCommand } from './commands/audit.js';
 
 const program = new Command();
 
@@ -82,5 +83,12 @@ program
   .option('--fix', 'Attempt to fix issues')
   .option('--path <dir>', 'Target repository path', '.')
   .action(validateCommand);
+
+program
+  .command('audit')
+  .description('Audit vibe coding maturity and get improvement suggestions')
+  .option('--format <type>', 'Output format: text, markdown', 'text')
+  .option('--path <dir>', 'Target repository path', '.')
+  .action(auditCommand);
 
 program.parse();
