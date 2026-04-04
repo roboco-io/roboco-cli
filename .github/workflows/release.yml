@@ -62,12 +62,24 @@ jobs:
         id: notes
         run: |
           TAG=${GITHUB_REF#refs/tags/}
-          PREV_TAG=$(git tag --sort=-creatordate | grep -v "$TAG" | head -1)
-          if [ -n "$PREV_TAG" ]; then
-            NOTES=$(git log --pretty=format:"- %s" "$PREV_TAG".."$TAG" | head -30)
-          else
-            NOTES=$(git log --pretty=format:"- %s" | head -30)
+          VERSION=${TAG#v}
+
+          # Try extracting from CHANGELOG.md first
+          NOTES=""
+          if [ -f CHANGELOG.md ]; then
+            NOTES=$(awk "/^## ${TAG//./\\.}|^## v?${VERSION//./\\.}/{found=1; next} /^## /{if(found) exit} found{print}" CHANGELOG.md)
           fi
+
+          # Fallback to git log if CHANGELOG section not found
+          if [ -z "$NOTES" ]; then
+            PREV_TAG=$(git tag --sort=-creatordate | grep -v "$TAG" | head -1)
+            if [ -n "$PREV_TAG" ]; then
+              NOTES=$(git log --pretty=format:"- %s" "$PREV_TAG".."$TAG" | head -30)
+            else
+              NOTES=$(git log --pretty=format:"- %s" | head -30)
+            fi
+          fi
+
           echo "notes<<EOF" >> $GITHUB_OUTPUT
           echo "$NOTES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
