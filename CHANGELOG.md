@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.4.0-beta.3 (2026-04-04)
+
+### Added
+- AI code review on pre-push via Claude Agent SDK (`scripts/ai-review.mjs`)
+  - Reviews diff for security, logic, correctness, breaking changes
+  - Blocks push on CRITICAL/HIGH issues or REQUEST_CHANGES verdict
+  - Skip with `SKIP_AI_REVIEW=1 git push` or auto-skipped in CI
+  - Non-blocking on SDK unavailable or unexpected errors
+- Pre-push hook now runs: typecheck → test → AI review
+
 ## v0.4.0-beta.2 (2026-04-04)
 
 ### Added
