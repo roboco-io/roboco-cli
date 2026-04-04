@@ -1,4 +1,14 @@
-# ROBOCO CLI
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/roboco-logo_white.png" />
+    <source media="(prefers-color-scheme: light)" srcset="docs/roboco-logo_white.png" />
+    <img src="docs/roboco-logo_white.png" alt="ROBOCO" width="280" />
+  </picture>
+</p>
+
+<h1 align="center">ROBOCO CLI</h1>
+
+<p align="center">
 
 [![CI](https://github.com/roboco-io/roboco-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/roboco-io/roboco-cli/actions/workflows/ci.yml)
 [![GitHub release](https://img.shields.io/github/v/release/roboco-io/roboco-cli?include_prereleases)](https://github.com/roboco-io/roboco-cli/releases)
