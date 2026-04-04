@@ -7,39 +7,45 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](https://www.typescriptlang.org)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-Plugin-purple)](https://claude.com/claude-code)
 
-> AI-native development scaffolding system for vibe coding with Claude Code
+> Enterprise-grade scaffolding for full vibe coding — where developers never touch code directly
 
-One command. Your entire repository becomes vibe-coding-ready.
+One command. Your entire repository becomes production-ready for full vibe coding.
 
 ```bash
 npx roboco init
 ```
 
-ROBOCO CLI analyzes your project, conducts an AI-powered interview, and generates a tailored configuration — so every team member works under the same AI-assisted development rules, from day one.
+ROBOCO CLI enables **full vibe coding** at enterprise production level — a development paradigm where developers express intent and AI writes all the code. No manual coding. No code review by humans. Instead, AI agents handle implementation, testing, and validation end-to-end, governed by rigorous process, documentation, and automated quality gates that live in your repository.
+
+This isn't a toy for side projects. ROBOCO sets up the harness, guardrails, and enforcement layer that make full vibe coding safe and reproducible for teams shipping to production.
 
 ## Why ROBOCO?
 
 ### The Problem
 
-Vibe coding with Claude Code is powerful, but setting it up properly is manual and inconsistent:
+Full vibe coding demands more discipline than traditional development, not less. Without proper harness engineering:
 
+- AI-generated code with no standardized quality gates ships unchecked to production
 - Every developer configures `CLAUDE.md`, `.claude/`, MCP servers, and hooks differently
 - New team members spend hours figuring out "how do we vibe code here?"
 - There's no enforcement — one developer's AI workflow doesn't carry over to another
-- Best practices (process documentation, quality gates, agent orchestration) are tribal knowledge
+- Process, documentation, and agent orchestration patterns are tribal knowledge, not code
+- Without harness engineering, full vibe coding is a liability, not a superpower
 
 ### The Solution
 
-ROBOCO makes vibe coding a **first-class, reproducible part of your codebase** — not a personal preference.
+ROBOCO turns full vibe coding from a risky experiment into a **governed, reproducible engineering practice**.
 
 | Without ROBOCO | With ROBOCO |
 |----------------|-------------|
+| AI writes code with no guardrails | Automated quality gates enforce standards on every AI-generated change |
 | Manual CLAUDE.md writing | `claude /init` + project-specific `<roboco>` context, auto-generated |
 | Copy-paste .claude/ settings | Stack-detected hooks (TS→Prettier, Py→Black, Go→gofmt) |
 | "Ask Sarah how she set up MCP" | `roboco install` — one command, identical environment |
 | No process, no docs | 5-stage vibe coding templates (Intent → Requirements → Research → Plan → Implement) |
 | Works on my machine | CI/CD enforces vibe coding rules via pre-commit hooks + GitHub Actions |
 | No visibility into setup quality | `roboco audit` scores your maturity across 5 categories (100 points) |
+| Full vibe coding feels unsafe | Harness engineering makes it production-safe |
 
 ### Key Benefits
 
