@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 200 200">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: #fff;
+      }
+    </style>
+  </defs>
+  <!-- Generator: Adobe Illustrator 28.7.4, SVG Export Plug-In . SVG Version: 1.2.0 Build 166)  -->
+  <g>
+    <g id="Layer_1">
+      <rect class="cls-1" x="-.17" y="-.13" width="200" height="200"/>
+      <g>
+        <rect x="29.1" y="162.47" width="141.63" height="8.28"/>
+        <rect x="54" y="28.99" width="8.4" height="8.46" transform="translate(116.41 66.43) rotate(-180)"/>
+        <rect x="62.41" y="37.4" width="8.4" height="8.35" transform="translate(133.23 83.14) rotate(-180)"/>
+        <rect x="45.72" y="37.42" width="8.32" height="16.75" transform="translate(99.76 91.59) rotate(-180)"/>
+        <rect x="29.07" y="54.13" width="16.67" height="8.34" transform="translate(74.8 116.59) rotate(-180)"/>
+        <rect x="20.64" y="62.43" width="8.46" height="100.07" transform="translate(49.74 224.94) rotate(-180)"/>
+        <path d="M45.69,78.08v67.56h107.66v-67.56H45.69ZM75.5,130h-9.66v-29.22h9.66v29.22ZM134,129.73h-9.66v-29.22h9.66v29.22Z"/>
+        <rect x="70.71" y="45.7" width="58.34" height="8.35" transform="translate(199.76 99.75) rotate(-180)"/>
+        <rect x="137.38" y="29.05" width="8.33" height="8.38"/>
+        <rect x="129.03" y="37.44" width="8.37" height="8.29"/>
+        <rect x="145.7" y="37.43" width="8.33" height="16.69"/>
+        <rect x="154.02" y="54.09" width="16.7" height="8.3"/>
+        <rect x="170.69" y="62.4" width="8.34" height="100.1"/>
+      </g>
+    </g>
+  </g>
+</svg>

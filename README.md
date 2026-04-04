@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/roboco-logo_white.png" />
-    <source media="(prefers-color-scheme: light)" srcset="docs/roboco-logo_white.png" />
-    <img src="docs/roboco-logo_white.png" alt="ROBOCO" width="280" />
+    <source media="(prefers-color-scheme: dark)" srcset="docs/roboco-logo.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="docs/roboco-logo.svg" />
+    <img src="docs/roboco-logo.svg" alt="ROBOCO" width="280" />
   </picture>
 </p>
 
