@@ -81,4 +81,48 @@ describe('analyzer', () => {
     expect(result.stack.languages).toHaveLength(0);
     expect(result.stack.frameworks).toHaveLength(0);
   });
+
+  it('reads existing .claude/settings.json contents', async () => {
+    await mkdir(join(tempDir, '.claude'), { recursive: true });
+    const settings = { permissions: { allow: ['Bash(docker *)'] }, hooks: { test: true } };
+    await writeFile(join(tempDir, '.claude', 'settings.json'), JSON.stringify(settings));
+
+    const result = await analyze(tempDir);
+    expect(result.existing.claudeSettings).not.toBeNull();
+    expect((result.existing.claudeSettings as Record<string, unknown>)['hooks']).toEqual({
+      test: true,
+    });
+  });
+
+  it('lists existing .claude/skills/ directories', async () => {
+    await mkdir(join(tempDir, '.claude', 'skills', 'my-skill'), { recursive: true });
+    await mkdir(join(tempDir, '.claude', 'skills', 'other-skill'), { recursive: true });
+
+    const result = await analyze(tempDir);
+    expect(result.existing.claudeSkills).toContain('my-skill');
+    expect(result.existing.claudeSkills).toContain('other-skill');
+    expect(result.existing.claudeSkills).toHaveLength(2);
+  });
+
+  it('lists existing .claude/commands/ directories', async () => {
+    await mkdir(join(tempDir, '.claude', 'commands', 'deploy'), { recursive: true });
+
+    const result = await analyze(tempDir);
+    expect(result.existing.claudeCommands).toContain('deploy');
+  });
+
+  it('returns null settings and empty arrays when no .claude/', async () => {
+    const result = await analyze(tempDir);
+    expect(result.existing.claudeSettings).toBeNull();
+    expect(result.existing.claudeSkills).toHaveLength(0);
+    expect(result.existing.claudeCommands).toHaveLength(0);
+  });
+
+  it('handles malformed settings.json gracefully', async () => {
+    await mkdir(join(tempDir, '.claude'), { recursive: true });
+    await writeFile(join(tempDir, '.claude', 'settings.json'), 'not json{{{');
+
+    const result = await analyze(tempDir);
+    expect(result.existing.claudeSettings).toBeNull();
+  });
 });

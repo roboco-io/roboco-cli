@@ -108,4 +108,37 @@ describe('init pipeline (analyze → interview → generate)', () => {
     expect(content).toContain('test-project');
     expect(content).toContain('<roboco>');
   });
+
+  it('pipeline merges with existing .claude/ settings', async () => {
+    // Pre-create .claude/ with custom settings
+    await mkdir(join(tempDir, '.claude', 'skills', 'custom-skill'), { recursive: true });
+    await mkdir(join(tempDir, '.claude', 'commands', 'deploy'), { recursive: true });
+    await writeFile(
+      join(tempDir, '.claude', 'settings.json'),
+      JSON.stringify({
+        permissions: { allow: ['Bash(docker *)'], deny: ['Bash(rm -rf /)'] },
+        mcpServers: { myServer: { command: 'npx my-server' } },
+      }),
+    );
+
+    const analysis = await analyze(tempDir);
+
+    // Verify analyzer reads existing config
+    expect(analysis.existing.claudeSettings).not.toBeNull();
+    expect(analysis.existing.claudeSkills).toContain('custom-skill');
+    expect(analysis.existing.claudeCommands).toContain('deploy');
+
+    const result = await interview(analysis, { auto: true });
+    await generate(tempDir, analysis, result);
+
+    // Verify merged settings
+    const settings = JSON.parse(await readFile(join(tempDir, '.claude', 'settings.json'), 'utf-8'));
+    // Existing preserved
+    expect(settings.permissions.allow).toContain('Bash(docker *)');
+    expect(settings.permissions.deny).toContain('Bash(rm -rf /)');
+    expect(settings.mcpServers.myServer.command).toBe('npx my-server');
+    // ROBOCO added
+    expect(settings.permissions.allow).toContain('Read');
+    expect(settings.hooks).toBeDefined();
+  });
 });
