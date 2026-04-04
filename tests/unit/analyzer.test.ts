@@ -16,10 +16,13 @@ describe('analyzer', () => {
   });
 
   it('detects TypeScript project', async () => {
-    await writeFile(join(tempDir, 'package.json'), JSON.stringify({
-      dependencies: {},
-      devDependencies: { typescript: '^5.0.0' },
-    }));
+    await writeFile(
+      join(tempDir, 'package.json'),
+      JSON.stringify({
+        dependencies: {},
+        devDependencies: { typescript: '^5.0.0' },
+      }),
+    );
     await writeFile(join(tempDir, 'tsconfig.json'), '{}');
 
     const result = await analyze(tempDir);
@@ -42,9 +45,12 @@ describe('analyzer', () => {
   });
 
   it('detects React framework', async () => {
-    await writeFile(join(tempDir, 'package.json'), JSON.stringify({
-      dependencies: { react: '^18.0.0' },
-    }));
+    await writeFile(
+      join(tempDir, 'package.json'),
+      JSON.stringify({
+        dependencies: { react: '^18.0.0' },
+      }),
+    );
 
     const result = await analyze(tempDir);
     expect(result.stack.frameworks).toContain('React');

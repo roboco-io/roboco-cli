@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import type { AnalysisResult, InterviewResult, RobocoConfig } from '../types/index.js';
-import { ensureDir, fileExists, writeText, writeJson } from '../utils/fs.js';
+import { ensureDir, fileExists, writeText } from '../utils/fs.js';
 import { logger } from '../utils/logger.js';
 
 interface FileOperation {
@@ -54,11 +54,12 @@ function relative(base: string, full: string): string {
 function generateClaudeEnv(
   targetPath: string,
   analysis: AnalysisResult,
-  interviewResult: InterviewResult,
+  _interviewResult: InterviewResult,
 ): FileOperation[] {
   const files: FileOperation[] = [];
   const projectName = analysis.git.repoName ?? 'My Project';
-  const stackList = [...analysis.stack.languages, ...analysis.stack.frameworks].join(', ') || 'Not detected';
+  const stackList =
+    [...analysis.stack.languages, ...analysis.stack.frameworks].join(', ') || 'Not detected';
 
   files.push({
     path: join(targetPath, 'CLAUDE.md'),
@@ -97,7 +98,17 @@ This project follows the 5-stage vibe coding process:
   const hooks = generateHooksForStack(analysis.stack.languages);
   const settings = {
     permissions: {
-      allow: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash(npm run *)', 'Bash(git status*)', 'Bash(git diff*)', 'Bash(git log*)'],
+      allow: [
+        'Read',
+        'Write',
+        'Edit',
+        'Glob',
+        'Grep',
+        'Bash(npm run *)',
+        'Bash(git status*)',
+        'Bash(git diff*)',
+        'Bash(git log*)',
+      ],
       deny: ['Bash(rm -rf *)', 'Bash(git push --force*)', 'Bash(git reset --hard*)'],
     },
     ...(Object.keys(hooks).length > 0 ? { hooks } : {}),
@@ -119,14 +130,25 @@ function generateHooksForStack(languages: string[]): Record<string, unknown> {
     hooks['PostToolUse'] = [
       {
         matcher: 'Write|Edit',
-        hooks: [{ type: 'command', command: 'npx prettier --write $CLAUDE_FILE_PATH 2>/dev/null || true' }],
+        hooks: [
+          {
+            type: 'command',
+            command: 'npx prettier --write $CLAUDE_FILE_PATH 2>/dev/null || true',
+          },
+        ],
       },
     ];
   } else if (languages.includes('Python')) {
     hooks['PostToolUse'] = [
       {
         matcher: 'Write|Edit',
-        hooks: [{ type: 'command', command: 'black $CLAUDE_FILE_PATH 2>/dev/null || ruff format $CLAUDE_FILE_PATH 2>/dev/null || true' }],
+        hooks: [
+          {
+            type: 'command',
+            command:
+              'black $CLAUDE_FILE_PATH 2>/dev/null || ruff format $CLAUDE_FILE_PATH 2>/dev/null || true',
+          },
+        ],
       },
     ];
   } else if (languages.includes('Go')) {
@@ -143,9 +165,21 @@ function generateHooksForStack(languages: string[]): Record<string, unknown> {
 
 function generateProcessDocs(targetPath: string): FileOperation[] {
   const stages = [
-    { file: '01-intent.md', title: 'Intent', desc: 'Communicate what you want to build clearly and concisely.' },
-    { file: '02-requirements.md', title: 'Requirements', desc: 'Define detailed requirements through deep interview.' },
-    { file: '03-research.md', title: 'Research', desc: 'Investigate approaches, tools, and existing solutions.' },
+    {
+      file: '01-intent.md',
+      title: 'Intent',
+      desc: 'Communicate what you want to build clearly and concisely.',
+    },
+    {
+      file: '02-requirements.md',
+      title: 'Requirements',
+      desc: 'Define detailed requirements through deep interview.',
+    },
+    {
+      file: '03-research.md',
+      title: 'Research',
+      desc: 'Investigate approaches, tools, and existing solutions.',
+    },
     { file: '04-plan.md', title: 'Plan', desc: 'Create a step-by-step implementation plan.' },
     { file: '05-implement.md', title: 'Implement', desc: 'Build the solution with AI assistance.' },
   ];
