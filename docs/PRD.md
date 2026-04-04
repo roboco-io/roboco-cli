@@ -116,6 +116,7 @@ ROBOCO CLI 도구 자체의 상태를 진단한다. (버전 업데이트 확인,
 | perplexity-ask MCP | 일반 웹 검색/Q&A (fallback) | 선택적 설치 (API 키 필요) | 선택 |
 | GitHub MCP | 이슈/PR 관리, 코드 검색 | 선택적 설치 (GitHub 토큰 필요) | 선택 |
 | Context7 MCP | 라이브러리/프레임워크 최신 문서 주입 | 선택적 설치 | 선택 |
+| Harness | 프로젝트별 에이전트 팀 설계/생성 (6가지 아키텍처 패턴) | 선택적 설치 (Claude Code 플러그인) | 선택 |
 
 ## 7. 기술 스택
 
@@ -179,6 +180,7 @@ ROBOCO CLI 도구 자체의 상태를 진단한다. (버전 업데이트 확인,
 | Claude Code Hooks | 필수 산출물 | `.claude/settings.json` hooks가 AI 세션 내 규칙 강제 담당. pre-commit hooks(CI)와 별도 |
 | init vs install 분리 | 분리 | 유사 CLI 63%가 "초기화"와 "적용" 분리. 팀원 온보딩 UX 개선 |
 | lint 명령어 | 제외 | 바이브 코딩 환경의 "올바름"은 정적으로 판단 불가. doctor(도구 자체 진단)와 status(리포 상태 리포트)로 충분 |
+| Harness 통합 | 선택적 플러그인 | OMC(범용 에이전트)와 보완적. 복잡한 프로젝트에서 도메인 특화 에이전트 팀 설계에 유용. 단순 프로젝트에는 과도 |
 
 ## 12. 로드맵
 
