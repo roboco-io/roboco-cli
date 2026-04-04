@@ -39,12 +39,20 @@ export async function initCommand(path: string | undefined, options: InitOptions
   logger.info(`Path: ${analysis.path}`);
   logger.info(`Stack: ${analysis.stack.languages.join(', ') || 'None detected'}`);
   logger.info(`Frameworks: ${analysis.stack.frameworks.join(', ') || 'None'}`);
-  logger.info(`Git: ${analysis.git.isRepo ? `${analysis.git.repoName ?? 'local'} (${analysis.git.branch})` : 'Not a git repo'}`);
-  logger.info(`Existing: ${[
-    analysis.existing.hasClaudeMd && 'CLAUDE.md',
-    analysis.existing.hasClaude && '.claude/',
-    analysis.existing.hasOmc && '.omc/',
-  ].filter(Boolean).join(', ') || 'None'}`);
+  logger.info(
+    `Git: ${analysis.git.isRepo ? `${analysis.git.repoName ?? 'local'} (${analysis.git.branch})` : 'Not a git repo'}`,
+  );
+  logger.info(
+    `Existing: ${
+      [
+        analysis.existing.hasClaudeMd && 'CLAUDE.md',
+        analysis.existing.hasClaude && '.claude/',
+        analysis.existing.hasOmc && '.omc/',
+      ]
+        .filter(Boolean)
+        .join(', ') || 'None'
+    }`,
+  );
 
   if (options.dryrun) {
     logger.blank();

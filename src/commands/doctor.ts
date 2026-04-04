@@ -34,7 +34,9 @@ export async function doctorCommand(): Promise<void> {
     label: 'Claude Code CLI',
     ok: claudeInstalled.ok,
     detail: claudeInstalled.detail,
-    fix: claudeInstalled.ok ? undefined : 'Install Claude Code: npm install -g @anthropic-ai/claude-code',
+    fix: claudeInstalled.ok
+      ? undefined
+      : 'Install Claude Code: npm install -g @anthropic-ai/claude-code',
   });
 
   // Global config
@@ -51,9 +53,10 @@ export async function doctorCommand(): Promise<void> {
   checks.push({
     label: 'OMC plugin',
     ok: omcInstalled.ok && omcInstalled.detail.includes('oh-my-claudecode'),
-    detail: omcInstalled.ok && omcInstalled.detail.includes('oh-my-claudecode')
-      ? 'installed'
-      : 'not found',
+    detail:
+      omcInstalled.ok && omcInstalled.detail.includes('oh-my-claudecode')
+        ? 'installed'
+        : 'not found',
     fix: 'Install: claude plugin install omc@oh-my-claudecode',
   });
 

@@ -7,7 +7,11 @@ import { DEFAULT_GLOBAL_CONFIG } from '../types/index.js';
 
 const CONFIG_PATH = join(homedir(), '.roboco', 'config.json');
 
-export async function configCommand(options: { get?: string; set?: string; reset?: boolean }): Promise<void> {
+export async function configCommand(options: {
+  get?: string;
+  set?: string;
+  reset?: boolean;
+}): Promise<void> {
   if (options.reset) {
     await writeJson(CONFIG_PATH, DEFAULT_GLOBAL_CONFIG);
     logger.success('Configuration reset to defaults');
@@ -22,7 +26,7 @@ export async function configCommand(options: { get?: string; set?: string; reset
     if (!key || value === undefined) {
       logger.error('Usage: roboco config --set key=value');
       process.exitCode = 1;
-    return;
+      return;
     }
     setNestedValue(config, key, parseValue(value));
     await writeJson(CONFIG_PATH, config);
@@ -35,7 +39,7 @@ export async function configCommand(options: { get?: string; set?: string; reset
     if (value === undefined) {
       logger.error(`Key "${options.get}" not found`);
       process.exitCode = 1;
-    return;
+      return;
     }
     logger.plain(typeof value === 'object' ? JSON.stringify(value, null, 2) : String(value));
     return;
@@ -61,7 +65,11 @@ function parseValue(value: string): unknown {
   if (value === 'false') return false;
   const num = Number(value);
   if (!isNaN(num)) return num;
-  try { return JSON.parse(value); } catch { return value; }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
 }
 
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {

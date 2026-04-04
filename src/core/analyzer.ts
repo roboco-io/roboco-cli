@@ -3,7 +3,13 @@ import { join } from 'node:path';
 import { fileExists, readJson } from '../utils/fs.js';
 import { logger } from '../utils/logger.js';
 import { isGitRepo, getRemoteUrl, getRepoName, getBranch } from '../utils/git.js';
-import type { AnalysisResult, StackInfo, RepoStructure, ExistingConfig, GitInfo } from '../types/index.js';
+import type {
+  AnalysisResult,
+  StackInfo,
+  RepoStructure,
+  ExistingConfig,
+  GitInfo,
+} from '../types/index.js';
 
 export async function analyze(targetPath: string): Promise<AnalysisResult> {
   try {
@@ -38,31 +44,42 @@ async function detectStack(path: string): Promise<StackInfo> {
         ...(pkg['dependencies'] as Record<string, string> | undefined),
         ...(pkg['devDependencies'] as Record<string, string> | undefined),
       };
-      if (allDeps['typescript'] || await fileExists(join(path, 'tsconfig.json'))) {
+      if (allDeps['typescript'] || (await fileExists(join(path, 'tsconfig.json')))) {
         info.hasTypeScript = true;
         info.languages.push('TypeScript');
       }
       const frameworkMap: Record<string, string> = {
-        react: 'React', vue: 'Vue', next: 'Next.js', nuxt: 'Nuxt',
-        express: 'Express', fastify: 'Fastify', nestjs: 'NestJS',
-        svelte: 'Svelte', angular: 'Angular',
+        react: 'React',
+        vue: 'Vue',
+        next: 'Next.js',
+        nuxt: 'Nuxt',
+        express: 'Express',
+        fastify: 'Fastify',
+        nestjs: 'NestJS',
+        svelte: 'Svelte',
+        angular: 'Angular',
       };
       for (const [dep, name] of Object.entries(frameworkMap)) {
         if (allDeps[dep] || allDeps[`@${dep}/core`]) info.frameworks.push(name);
       }
-    } catch { logger.debug('Failed to parse package.json'); }
+    } catch {
+      logger.debug('Failed to parse package.json');
+    }
 
     if (await fileExists(join(path, 'pnpm-lock.yaml'))) info.packageManager = 'pnpm';
     else if (await fileExists(join(path, 'yarn.lock'))) info.packageManager = 'yarn';
     else if (await fileExists(join(path, 'bun.lockb'))) info.packageManager = 'bun';
   }
 
-  if (await fileExists(join(path, 'pyproject.toml')) || await fileExists(join(path, 'requirements.txt'))) {
+  if (
+    (await fileExists(join(path, 'pyproject.toml'))) ||
+    (await fileExists(join(path, 'requirements.txt')))
+  ) {
     info.languages.push('Python');
   }
   if (await fileExists(join(path, 'go.mod'))) info.languages.push('Go');
   if (await fileExists(join(path, 'Cargo.toml'))) info.languages.push('Rust');
-  if (await fileExists(join(path, 'pom.xml')) || await fileExists(join(path, 'build.gradle'))) {
+  if ((await fileExists(join(path, 'pom.xml'))) || (await fileExists(join(path, 'build.gradle')))) {
     info.languages.push('Java');
   }
 
@@ -71,8 +88,14 @@ async function detectStack(path: string): Promise<StackInfo> {
 
 async function scanStructure(path: string): Promise<RepoStructure> {
   const entries = await readdir(path, { withFileTypes: true });
-  const rootFiles = entries.filter((e: { isFile(): boolean; name: string }) => e.isFile()).map((e: { name: string }) => e.name);
-  const rootDirs = entries.filter((e: { isDirectory(): boolean; name: string }) => e.isDirectory() && !e.name.startsWith('.')).map((e: { name: string }) => e.name);
+  const rootFiles = entries
+    .filter((e: { isFile(): boolean; name: string }) => e.isFile())
+    .map((e: { name: string }) => e.name);
+  const rootDirs = entries
+    .filter(
+      (e: { isDirectory(): boolean; name: string }) => e.isDirectory() && !e.name.startsWith('.'),
+    )
+    .map((e: { name: string }) => e.name);
 
   const sourceCandidates = ['src', 'lib', 'app', 'source'];
   const sourceDir = sourceCandidates.find((d) => rootDirs.includes(d)) ?? null;

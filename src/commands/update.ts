@@ -12,7 +12,10 @@ interface UpdateOptions {
   auto?: boolean;
 }
 
-export async function updateCommand(path: string | undefined, options: UpdateOptions): Promise<void> {
+export async function updateCommand(
+  path: string | undefined,
+  options: UpdateOptions,
+): Promise<void> {
   const targetPath = resolve(path ?? '.');
   const configPath = resolve(targetPath, '.roboco', 'config.json');
 

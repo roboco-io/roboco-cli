@@ -16,9 +16,20 @@ export async function installTools(tools: ToolSelection): Promise<InstallResult[
 
   // Optional MCP servers
   if (tools.exaAi) results.push(await installMCP('exa', 'npx -y exa-mcp-server', 'EXA_API_KEY'));
-  if (tools.perplexityAsk) results.push(await installMCP('perplexity-ask', 'npx -y @anthropic-ai/perplexity-ask', 'PERPLEXITY_API_KEY'));
-  if (tools.githubMcp) results.push(await installMCP('github', 'npx -y @modelcontextprotocol/server-github', 'GITHUB_TOKEN'));
-  if (tools.context7) results.push(await installMCPSimple('context7', 'npx -y @upstash/context7-mcp@latest'));
+  if (tools.perplexityAsk)
+    results.push(
+      await installMCP(
+        'perplexity-ask',
+        'npx -y @anthropic-ai/perplexity-ask',
+        'PERPLEXITY_API_KEY',
+      ),
+    );
+  if (tools.githubMcp)
+    results.push(
+      await installMCP('github', 'npx -y @modelcontextprotocol/server-github', 'GITHUB_TOKEN'),
+    );
+  if (tools.context7)
+    results.push(await installMCPSimple('context7', 'npx -y @upstash/context7-mcp@latest'));
 
   // OpenSpec
   if (tools.openspec) results.push(await installOpenSpec());
@@ -34,8 +45,14 @@ async function installOMC(): Promise<InstallResult> {
     await execa('claude', ['plugin', 'install', 'omc@oh-my-claudecode'], { timeout: 60000 });
     return { tool: 'oh-my-claudecode', success: true, message: 'Installed via plugin' };
   } catch {
-    logger.warn('OMC plugin install failed. You can install it manually: claude plugin install omc@oh-my-claudecode');
-    return { tool: 'oh-my-claudecode', success: false, message: 'Install failed — install manually' };
+    logger.warn(
+      'OMC plugin install failed. You can install it manually: claude plugin install omc@oh-my-claudecode',
+    );
+    return {
+      tool: 'oh-my-claudecode',
+      success: false,
+      message: 'Install failed — install manually',
+    };
   }
 }
 
@@ -75,7 +92,9 @@ async function installHarness(): Promise<InstallResult> {
     await execa('claude', ['plugin', 'install', 'harness@harness'], { timeout: 60000 });
     return { tool: 'harness', success: true, message: 'Installed via plugin' };
   } catch {
-    logger.warn('Harness plugin install failed. Install manually: claude plugin install harness@harness');
+    logger.warn(
+      'Harness plugin install failed. Install manually: claude plugin install harness@harness',
+    );
     return { tool: 'harness', success: false, message: 'Install failed — install manually' };
   }
 }

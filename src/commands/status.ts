@@ -9,7 +9,10 @@ interface StatusOptions {
   format?: string;
 }
 
-export async function statusCommand(path: string | undefined, options: StatusOptions): Promise<void> {
+export async function statusCommand(
+  path: string | undefined,
+  options: StatusOptions,
+): Promise<void> {
   const targetPath = resolve(path ?? '.');
   const configPath = resolve(targetPath, '.roboco', 'config.json');
   const hasConfig = await fileExists(configPath);
@@ -30,24 +33,45 @@ export async function statusCommand(path: string | undefined, options: StatusOpt
 
   // .claude/
   if (analysis.existing.hasClaude) {
-    const entries = await readdir(join(targetPath, '.claude'), { withFileTypes: true }).catch((): never[] => []);
-    const dirs = entries.filter((e: { isDirectory(): boolean }) => e.isDirectory()).map((e: { name: string }) => e.name);
-    items.push({ label: '.claude/', ok: true, detail: `configured (${dirs.join(', ') || 'empty'})` });
+    const entries = await readdir(join(targetPath, '.claude'), { withFileTypes: true }).catch(
+      (): never[] => [],
+    );
+    const dirs = entries
+      .filter((e: { isDirectory(): boolean }) => e.isDirectory())
+      .map((e: { name: string }) => e.name);
+    items.push({
+      label: '.claude/',
+      ok: true,
+      detail: `configured (${dirs.join(', ') || 'empty'})`,
+    });
   } else {
     items.push({ label: '.claude/', ok: false, detail: 'not found' });
   }
 
   // OMC
-  items.push({ label: 'OMC', ok: analysis.existing.hasOmc, detail: analysis.existing.hasOmc ? 'installed' : 'not installed' });
+  items.push({
+    label: 'OMC',
+    ok: analysis.existing.hasOmc,
+    detail: analysis.existing.hasOmc ? 'installed' : 'not installed',
+  });
 
   // .roboco config
-  items.push({ label: 'ROBOCO config', ok: hasConfig, detail: hasConfig ? 'initialized' : 'not initialized' });
+  items.push({
+    label: 'ROBOCO config',
+    ok: hasConfig,
+    detail: hasConfig ? 'initialized' : 'not initialized',
+  });
 
   // OpenSpec
-  items.push({ label: 'OpenSpec', ok: analysis.existing.hasOpenSpec, detail: analysis.existing.hasOpenSpec ? 'configured' : 'not configured' });
+  items.push({
+    label: 'OpenSpec',
+    ok: analysis.existing.hasOpenSpec,
+    detail: analysis.existing.hasOpenSpec ? 'configured' : 'not configured',
+  });
 
   // Stack
-  const stackLabel = [...analysis.stack.languages, ...analysis.stack.frameworks].join(', ') || 'Not detected';
+  const stackLabel =
+    [...analysis.stack.languages, ...analysis.stack.frameworks].join(', ') || 'Not detected';
 
   if (format === 'markdown') {
     printMarkdown(items, stackLabel, hasConfig ? configPath : null);
@@ -79,7 +103,9 @@ async function printText(
       const config = await readJson<RobocoConfig>(configPath);
       logger.plain(`  Initialized: ${config.createdAt.split('T')[0]}`);
       logger.plain(`  Last updated: ${config.updatedAt.split('T')[0]}`);
-    } catch { /* config may be corrupted */ }
+    } catch {
+      /* config may be corrupted */
+    }
   }
 }
 
