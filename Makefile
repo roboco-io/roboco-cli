@@ -5,7 +5,7 @@
 
 # ─── Full local workflow ───────────────────────────────────────────────
 # Mutating targets run sequentially (format → fix), then parallel-safe targets.
-all: format fix test build
+all: fix test build
 
 # ─── CI-friendly checks (no mutation) ──────────────────────────────────
 check: check-format lint typecheck test build
