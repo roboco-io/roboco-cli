@@ -126,3 +126,33 @@ describe('analyzer', () => {
     expect(result.existing.claudeSettings).toBeNull();
   });
 });
+
+describe('analyzer signals', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'roboco-signal-'));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('hasProto is false when no .proto files exist', async () => {
+    const result = await analyze(tempDir);
+    expect(result.signals.hasProto).toBe(false);
+  });
+
+  it('hasProto is true when a .proto file exists at root', async () => {
+    await writeFile(join(tempDir, 'service.proto'), 'syntax = "proto3";\n');
+    const result = await analyze(tempDir);
+    expect(result.signals.hasProto).toBe(true);
+  });
+
+  it('hasProto is true when a .proto file exists in a subdirectory', async () => {
+    await mkdir(join(tempDir, 'proto'));
+    await writeFile(join(tempDir, 'proto', 'service.proto'), 'syntax = "proto3";\n');
+    const result = await analyze(tempDir);
+    expect(result.signals.hasProto).toBe(true);
+  });
+});
