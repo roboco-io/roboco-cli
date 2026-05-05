@@ -1,6 +1,10 @@
+import { join } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { execa } from 'execa';
-import type { ToolSelection } from '../types/index.js';
+import type { AnalysisResult, ToolSelection } from '../types/index.js';
 import { logger } from '../utils/logger.js';
+import { resolveBundle, MARKETPLACE } from './toolbox-bundles.js';
+import { mergeToolboxSettings } from './generator.js';
 
 interface InstallResult {
   tool: string;
@@ -109,4 +113,59 @@ export function printInstallReport(results: InstallResult[]): void {
       logger.warn(`  ${r.tool}: ${r.message}`);
     }
   }
+}
+
+export async function installToolbox(analysis: AnalysisResult): Promise<InstallResult> {
+  const bundle = resolveBundle(analysis.stack.languages, analysis.signals);
+
+  // 1. Write project-scoped settings.json (source of truth — survives subprocess failure)
+  await writeProjectSettings(analysis.path, bundle);
+
+  // 2. Subprocess: marketplace add
+  try {
+    await execa('claude', ['plugin', 'marketplace', 'add', `${MARKETPLACE.source.repo}`], {
+      timeout: 30000,
+    });
+  } catch {
+    logger.warn(
+      `claude-toolbox: marketplace add failed. Run manually: claude plugin marketplace add ${MARKETPLACE.source.repo}`,
+    );
+    return {
+      tool: 'claude-toolbox',
+      success: false,
+      message: 'Marketplace add failed — settings.json written, install skipped',
+    };
+  }
+
+  // 3. Subprocess: per-plugin install
+  let installed = 0;
+  for (const plugin of bundle) {
+    try {
+      await execa('claude', ['plugin', 'install', `${plugin}@${MARKETPLACE.name}`], {
+        timeout: 60000,
+      });
+      installed++;
+    } catch {
+      logger.warn(`claude-toolbox: install of ${plugin} failed`);
+    }
+  }
+
+  return {
+    tool: 'claude-toolbox',
+    success: installed > 0,
+    message: `Installed ${installed}/${bundle.length} plugins. Teammates: run \`roboco install\` to enable.`,
+  };
+}
+
+async function writeProjectSettings(targetPath: string, bundle: string[]): Promise<void> {
+  const settingsPath = join(targetPath, '.claude', 'settings.json');
+  await mkdir(join(targetPath, '.claude'), { recursive: true });
+  let existing: Record<string, unknown> = {};
+  try {
+    existing = JSON.parse(await readFile(settingsPath, 'utf-8')) as Record<string, unknown>;
+  } catch {
+    // file does not exist or is invalid — start fresh
+  }
+  const merged = mergeToolboxSettings(existing, bundle);
+  await writeFile(settingsPath, JSON.stringify(merged, null, 2) + '\n');
 }
