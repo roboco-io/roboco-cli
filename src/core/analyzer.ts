@@ -9,6 +9,7 @@ import type {
   RepoStructure,
   ExistingConfig,
   GitInfo,
+  RepoSignals,
 } from '../types/index.js';
 
 export async function analyze(targetPath: string): Promise<AnalysisResult> {
@@ -17,13 +18,14 @@ export async function analyze(targetPath: string): Promise<AnalysisResult> {
   } catch {
     throw new Error(`Directory not found: ${targetPath}`);
   }
-  const [stack, structure, existing, git] = await Promise.all([
+  const [stack, structure, existing, git, signals] = await Promise.all([
     detectStack(targetPath),
     scanStructure(targetPath),
     checkExisting(targetPath),
     getGitInfo(targetPath),
+    detectSignals(targetPath),
   ]);
-  return { path: targetPath, stack, structure, existing, git };
+  return { path: targetPath, stack, structure, existing, git, signals };
 }
 
 async function detectStack(path: string): Promise<StackInfo> {
@@ -170,4 +172,36 @@ async function getGitInfo(path: string): Promise<GitInfo> {
     getBranch(path),
   ]);
   return { isRepo, remoteUrl, repoName, branch };
+}
+
+async function detectSignals(rootPath: string): Promise<RepoSignals> {
+  const hasProto = await containsExtension(rootPath, '.proto', 4);
+  return { hasProto };
+}
+
+async function containsExtension(
+  rootPath: string,
+  ext: string,
+  maxDepth: number,
+): Promise<boolean> {
+  const ignore = new Set(['.git', 'node_modules', 'dist', 'build', '.next', 'target', 'vendor']);
+  async function walk(dir: string, depth: number): Promise<boolean> {
+    if (depth > maxDepth) return false;
+    let entries;
+    try {
+      entries = await readdir(dir, { withFileTypes: true });
+    } catch {
+      return false;
+    }
+    for (const e of entries) {
+      if (e.isFile() && e.name.endsWith(ext)) return true;
+    }
+    for (const e of entries) {
+      if (e.isDirectory() && !ignore.has(e.name) && !e.name.startsWith('.')) {
+        if (await walk(join(dir, e.name), depth + 1)) return true;
+      }
+    }
+    return false;
+  }
+  return walk(rootPath, 0);
 }
