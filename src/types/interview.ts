@@ -12,6 +12,7 @@ export interface ToolSelection {
   githubMcp: boolean;
   context7: boolean;
   harness: boolean;
+  toolbox: boolean;
 }
 
 export interface InterviewResult {
