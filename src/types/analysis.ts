@@ -34,10 +34,15 @@ export interface GitInfo {
   branch: string | null;
 }
 
+export interface RepoSignals {
+  hasProto: boolean;
+}
+
 export interface AnalysisResult {
   path: string;
   stack: StackInfo;
   structure: RepoStructure;
   existing: ExistingConfig;
   git: GitInfo;
+  signals: RepoSignals;
 }
