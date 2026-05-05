@@ -3,12 +3,37 @@ import { execa } from 'execa';
 import type { AnalysisResult, InterviewResult, RobocoConfig } from '../types/index.js';
 import { ensureDir, fileExists, writeText, readText } from '../utils/fs.js';
 import { logger } from '../utils/logger.js';
+import { MARKETPLACE } from './toolbox-bundles.js';
 
 interface FileOperation {
   path: string;
   content: string;
   description: string;
   overwrite?: boolean;
+}
+
+export function mergeToolboxSettings(
+  existing: Record<string, unknown>,
+  bundle: string[],
+): Record<string, unknown> {
+  const result = { ...existing };
+
+  const marketplaces = (result['extraKnownMarketplaces'] ?? {}) as Record<string, unknown>;
+  const newMarketplaces = { ...marketplaces };
+  if (!newMarketplaces[MARKETPLACE.name]) {
+    newMarketplaces[MARKETPLACE.name] = { source: MARKETPLACE.source };
+  }
+  result['extraKnownMarketplaces'] = newMarketplaces;
+
+  const plugins = (result['enabledPlugins'] ?? {}) as Record<string, boolean>;
+  const newPlugins = { ...plugins };
+  for (const name of bundle) {
+    const key = `${name}@${MARKETPLACE.name}`;
+    if (newPlugins[key] !== false) newPlugins[key] = true;
+  }
+  result['enabledPlugins'] = newPlugins;
+
+  return result;
 }
 
 export async function generate(

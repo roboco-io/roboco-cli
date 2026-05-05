@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdtemp, rm, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { generate } from '../../src/core/generator.js';
+import { generate, mergeToolboxSettings } from '../../src/core/generator.js';
 import type { AnalysisResult, InterviewResult } from '../../src/types/index.js';
 
 function makeAnalysis(
@@ -141,5 +141,49 @@ describe('settings.json merge', () => {
     expect(settings.customSetting).toBe('user-value');
     expect(settings.mcpServers).toBeDefined();
     expect(settings.mcpServers.myServer.command).toBe('npx my-server');
+  });
+});
+
+describe('mergeToolboxSettings', () => {
+  it('writes marketplace + enabledPlugins on empty settings', () => {
+    const result = mergeToolboxSettings({}, ['next-action', 'todo']);
+    expect(result['extraKnownMarketplaces']).toEqual({
+      'claude-toolbox': { source: { source: 'github', repo: 'jaeyeom/claude-toolbox' } },
+    });
+    expect(result['enabledPlugins']).toEqual({
+      'next-action@claude-toolbox': true,
+      'todo@claude-toolbox': true,
+    });
+  });
+
+  it('preserves unrelated existing keys', () => {
+    const existing = { permissions: { allow: ['Read'], deny: [] } };
+    const result = mergeToolboxSettings(existing, ['next-action']);
+    expect(result['permissions']).toEqual({ allow: ['Read'], deny: [] });
+  });
+
+  it('does not overwrite explicit false in enabledPlugins', () => {
+    const existing = { enabledPlugins: { 'next-action@claude-toolbox': false } };
+    const result = mergeToolboxSettings(existing, ['next-action', 'todo']);
+    expect(result['enabledPlugins']).toEqual({
+      'next-action@claude-toolbox': false,
+      'todo@claude-toolbox': true,
+    });
+  });
+
+  it('is idempotent on re-run with same bundle', () => {
+    const first = mergeToolboxSettings({}, ['next-action']);
+    const second = mergeToolboxSettings(first, ['next-action']);
+    expect(second).toEqual(first);
+  });
+
+  it('preserves an existing matching marketplace entry', () => {
+    const existing = {
+      extraKnownMarketplaces: {
+        'claude-toolbox': { source: { source: 'github', repo: 'jaeyeom/claude-toolbox' } },
+      },
+    };
+    const result = mergeToolboxSettings(existing, []);
+    expect(result['extraKnownMarketplaces']).toEqual(existing.extraKnownMarketplaces);
   });
 });
