@@ -44,7 +44,7 @@ export async function updateCommand(
   await writeJson(configPath, existing);
 
   const installSpinner = ora('Updating tools...').start();
-  const results = await installTools(interviewResult.tools);
+  const results = await installTools(interviewResult.tools, analysis);
   installSpinner.succeed('Tools updated');
   printInstallReport(results);
 

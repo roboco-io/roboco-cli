@@ -12,7 +12,10 @@ interface InstallResult {
   message: string;
 }
 
-export async function installTools(tools: ToolSelection): Promise<InstallResult[]> {
+export async function installTools(
+  tools: ToolSelection,
+  analysis: AnalysisResult,
+): Promise<InstallResult[]> {
   const results: InstallResult[] = [];
 
   // OMC (required)
@@ -40,6 +43,9 @@ export async function installTools(tools: ToolSelection): Promise<InstallResult[
 
   // Harness
   if (tools.harness) results.push(await installHarness());
+
+  // Toolbox
+  if (tools.toolbox) results.push(await installToolbox(analysis));
 
   return results;
 }
