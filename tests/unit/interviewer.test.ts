@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { interview } from '../../src/core/interviewer.js';
+import { interview, parseAiResult } from '../../src/core/interviewer.js';
 import type { AnalysisResult } from '../../src/types/index.js';
 
 function makeAnalysis(): AnalysisResult {
@@ -109,5 +109,53 @@ describe('interviewer toolbox integration', () => {
       { auto: true },
     );
     expect(result.tools.toolbox).toBe(true);
+  });
+});
+
+const stubAnalysis: AnalysisResult = {
+  path: '/tmp/x',
+  stack: {
+    languages: ['TypeScript'],
+    frameworks: [],
+    buildTools: [],
+    packageManager: 'npm',
+    hasTypeScript: true,
+  },
+  structure: {
+    rootFiles: [],
+    rootDirs: [],
+    sourceDir: 'src',
+    testDir: 'tests',
+    hasMonorepo: false,
+  },
+  existing: {
+    hasClaude: false,
+    hasClaudeMd: false,
+    hasOmc: false,
+    hasRoboco: false,
+    hasOpenSpec: false,
+    claudeSettings: null,
+    claudeSkills: [],
+    claudeCommands: [],
+    globalSettings: null,
+    globalSkills: [],
+  },
+  git: { isRepo: false, remoteUrl: null, repoName: null, branch: null },
+  signals: { hasProto: false },
+};
+
+describe('parseAiResult toolbox fallback', () => {
+  it('defaults toolbox to true when AI omits the field', () => {
+    const aiOutput =
+      '```json\n{"setupDomains":{"claudeEnv":true,"processDocs":true,"cicd":true},"tools":{"omc":true,"openspec":true,"exaAi":false,"perplexityAsk":false,"githubMcp":false,"context7":true,"harness":false}}\n```';
+    const result = parseAiResult(aiOutput, stubAnalysis);
+    expect(result.tools.toolbox).toBe(true);
+  });
+
+  it('honors toolbox: false when AI explicitly opts out', () => {
+    const aiOutput =
+      '```json\n{"tools":{"omc":true,"openspec":false,"exaAi":false,"perplexityAsk":false,"githubMcp":false,"context7":false,"harness":false,"toolbox":false}}\n```';
+    const result = parseAiResult(aiOutput, stubAnalysis);
+    expect(result.tools.toolbox).toBe(false);
   });
 });

@@ -1,6 +1,7 @@
 import type { AnalysisResult, InterviewResult, ToolSelection } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 import { confirm } from '../utils/prompt.js';
+import { CORE_BUNDLE, resolveBundle } from './toolbox-bundles.js';
 
 export async function interview(
   analysis: AnalysisResult,
@@ -113,7 +114,7 @@ function buildInterviewPrompt(analysis: AnalysisResult): string {
   return parts.join('\n');
 }
 
-function parseAiResult(result: string, analysis: AnalysisResult): InterviewResult {
+export function parseAiResult(result: string, analysis: AnalysisResult): InterviewResult {
   // Extract JSON from markdown code block
   const jsonMatch = result.match(/```json\s*([\s\S]*?)```/);
   if (jsonMatch?.[1]) {
@@ -174,19 +175,19 @@ async function interactiveInterview(analysis: AnalysisResult): Promise<Interview
   const context7 = await confirm('  Context7 MCP (up-to-date library docs)?');
   const harness = await confirm('  Harness (domain-specific agent team design)?');
 
-  const overlayHints: string[] = [];
-  if (analysis.stack.languages.includes('Go')) overlayHints.push('go-dev');
-  if (
-    analysis.stack.languages.includes('TypeScript') ||
-    analysis.stack.languages.includes('JavaScript')
-  ) {
-    overlayHints.push('biome-vcs-integration');
+  const fullBundle = resolveBundle(analysis.stack.languages, analysis.signals);
+  const overlayHints = fullBundle.filter((p) => !CORE_BUNDLE.includes(p));
+
+  logger.blank();
+  logger.info('  claude-toolbox bundle adds:');
+  logger.plain('    • task workflow (next-action, todo, gh-issue-resolver)');
+  logger.plain('    • security review (semgrep-review)');
+  logger.plain('    • check orchestration (makefile-workflow)');
+  logger.plain('    • sandbox helpers');
+  if (overlayHints.length > 0) {
+    logger.plain(`    • stack-specific: ${overlayHints.join(', ')}`);
   }
-  if (analysis.signals.hasProto) overlayHints.push('protobuf-dev');
-  const overlayMsg = overlayHints.length > 0 ? ` (also: ${overlayHints.join(', ')})` : '';
-  const toolbox = await confirm(
-    `  claude-toolbox bundle${overlayMsg} (next-action, todo, gh-issue-resolver, semgrep-review, sandbox-helpers, makefile-workflow)?`,
-  );
+  const toolbox = await confirm('  Install claude-toolbox bundle?');
 
   return {
     setupDomains: {
