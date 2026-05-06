@@ -106,3 +106,28 @@ describe('roboco add toolbox', () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 });
+
+describe('roboco add toolbox:<plugin>', () => {
+  beforeEach(() => {
+    execaMock.mockReset();
+    execaMock.mockResolvedValue({ stdout: '', stderr: '' });
+  });
+
+  it('installs a single non-overlapping plugin', async () => {
+    const tempDir = await fixture();
+    await addCommand('toolbox:next-action', { path: tempDir });
+    const calls = execaMock.mock.calls.map((c) => c[1]);
+    expect(calls).toContainEqual(['plugin', 'install', 'next-action@claude-toolbox']);
+    const settings = JSON.parse(await readFile(join(tempDir, '.claude', 'settings.json'), 'utf-8'));
+    expect(settings.enabledPlugins['next-action@claude-toolbox']).toBe(true);
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('rejects unknown plugin name', async () => {
+    const tempDir = await fixture();
+    await addCommand('toolbox:not-a-real-plugin', { path: tempDir });
+    expect(process.exitCode).toBe(1);
+    process.exitCode = 0;
+    await rm(tempDir, { recursive: true, force: true });
+  });
+});

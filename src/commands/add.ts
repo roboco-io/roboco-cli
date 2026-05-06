@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import ora from 'ora';
 import { fileExists, readJson, writeJson } from '../utils/fs.js';
-import { installTools, installToolbox } from '../core/installer.js';
+import { installTools, installToolbox, installSingleToolboxPlugin } from '../core/installer.js';
 import { logger } from '../utils/logger.js';
 import type { RobocoConfig, ToolSelection } from '../types/index.js';
 
@@ -29,14 +29,6 @@ export async function addCommand(
     return;
   }
 
-  const tool = KNOWN_TOOLS[integration.toLowerCase()];
-  if (!tool) {
-    logger.error(`Unknown integration: "${integration}"`);
-    logger.info(`Available: ${Object.keys(KNOWN_TOOLS).join(', ')}`);
-    process.exitCode = 1;
-    return;
-  }
-
   const targetPath = resolve(options.path ?? '.');
   const configPath = resolve(targetPath, '.roboco', 'config.json');
 
@@ -48,6 +40,36 @@ export async function addCommand(
   }
 
   const config = await readJson<RobocoConfig>(configPath);
+
+  // Single-plugin toolbox install: `roboco add toolbox:<plugin>`
+  if (integration.toLowerCase().startsWith('toolbox:')) {
+    const pluginName = integration.slice('toolbox:'.length);
+    const spinner = ora(`Installing ${integration}...`).start();
+    let result;
+    try {
+      result = await installSingleToolboxPlugin(pluginName, targetPath);
+    } catch (err) {
+      spinner.fail(`Install of ${integration} failed`);
+      const reason = err instanceof Error ? err.message : String(err);
+      logger.error(`${integration}: ${reason}`);
+      process.exitCode = 1;
+      return;
+    }
+    if (result.success) {
+      spinner.succeed(`${integration} installed`);
+      logger.success(`${result.tool}: ${result.message}`);
+      config.updatedAt = new Date().toISOString();
+      if (!config.installedTools.includes(`toolbox:${pluginName}`)) {
+        config.installedTools.push(`toolbox:${pluginName}`);
+      }
+      await writeJson(configPath, config);
+    } else {
+      spinner.fail(`${integration} install failed`);
+      logger.error(`${result.tool}: ${result.message}`);
+      process.exitCode = 1;
+    }
+    return;
+  }
 
   if (integration.toLowerCase() === 'toolbox') {
     const spinner = ora('Installing claude-toolbox bundle...').start();
@@ -74,6 +96,14 @@ export async function addCommand(
     if (!config.installedTools.includes('toolbox')) config.installedTools.push('toolbox');
     await writeJson(configPath, config);
     logger.success('Configuration updated.');
+    return;
+  }
+
+  const tool = KNOWN_TOOLS[integration.toLowerCase()];
+  if (!tool) {
+    logger.error(`Unknown integration: "${integration}"`);
+    logger.info(`Available: ${Object.keys(KNOWN_TOOLS).join(', ')}`);
+    process.exitCode = 1;
     return;
   }
 

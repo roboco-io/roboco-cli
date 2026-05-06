@@ -42,3 +42,16 @@ export function resolveBundle(languages: string[], signals: ResolveSignals): str
     (p) => !OVERLAPPING_PLUGINS.has(p),
   );
 }
+
+export const KNOWN_PLUGINS = new Set<string>([
+  ...CORE_BUNDLE,
+  ...Object.values(STACK_OVERLAYS).flat(),
+  ...Object.values(SIGNAL_OVERLAYS).flat(),
+  ...OVERLAPPING_PLUGINS,
+  // Catalog-only entries (in marketplace but not in any default bundle)
+  'apply-figma-make',
+  'cloudflare-macos-fix',
+  'create-lang-dev-skill',
+  'jira-commands',
+  'jira-edit-description',
+]);
