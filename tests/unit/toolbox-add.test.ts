@@ -91,4 +91,18 @@ describe('roboco add toolbox', () => {
     expect(cfg.installedTools).toContain('toolbox');
     await rm(tempDir, { recursive: true, force: true });
   });
+
+  it('reports failure cleanly when installToolbox returns result.success === false', async () => {
+    const tempDir = await fixture();
+    execaMock.mockReset();
+    // First call (marketplace add) throws — installToolbox catches it and returns success:false
+    execaMock.mockRejectedValueOnce(new Error('marketplace failed'));
+    await addCommand('toolbox', { path: tempDir });
+    // Even with marketplace add failure, settings.json is written and config.json is updated
+    // (per design: settings is source of truth, persists user intent)
+    const cfg = JSON.parse(await readFile(join(tempDir, '.roboco', 'config.json'), 'utf-8'));
+    expect(cfg.interview.tools.toolbox).toBe(true);
+    expect(cfg.installedTools).toContain('toolbox');
+    await rm(tempDir, { recursive: true, force: true });
+  });
 });
