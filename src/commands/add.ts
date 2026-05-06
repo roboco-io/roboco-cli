@@ -51,10 +51,23 @@ export async function addCommand(
 
   if (integration.toLowerCase() === 'toolbox') {
     const spinner = ora('Installing claude-toolbox bundle...').start();
-    const result = await installToolbox(config.analysis);
-    spinner.succeed('claude-toolbox bundle install complete');
-    if (result.success) logger.success(`${result.tool}: ${result.message}`);
-    else logger.warn(`${result.tool}: ${result.message}`);
+    let result;
+    try {
+      result = await installToolbox(config.analysis);
+    } catch (err) {
+      spinner.fail('claude-toolbox bundle install failed');
+      const reason = err instanceof Error ? err.message : String(err);
+      logger.error(`claude-toolbox: ${reason}`);
+      process.exitCode = 1;
+      return;
+    }
+    if (result.success) {
+      spinner.succeed('claude-toolbox bundle install complete');
+      logger.success(`${result.tool}: ${result.message}`);
+    } else {
+      spinner.warn('claude-toolbox bundle install partially complete');
+      logger.warn(`${result.tool}: ${result.message}`);
+    }
 
     config.interview.tools.toolbox = true;
     config.updatedAt = new Date().toISOString();
