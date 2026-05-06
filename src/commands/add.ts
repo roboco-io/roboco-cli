@@ -1,7 +1,12 @@
 import { resolve } from 'node:path';
 import ora from 'ora';
 import { fileExists, readJson, writeJson } from '../utils/fs.js';
-import { installTools, installToolbox, installSingleToolboxPlugin } from '../core/installer.js';
+import {
+  installTools,
+  installToolbox,
+  installSingleToolboxPlugin,
+  type InstallResult,
+} from '../core/installer.js';
 import { logger } from '../utils/logger.js';
 import type { RobocoConfig, ToolSelection } from '../types/index.js';
 
@@ -45,13 +50,17 @@ export async function addCommand(
   if (integration.toLowerCase().startsWith('toolbox:')) {
     const pluginName = integration.slice('toolbox:'.length);
     const spinner = ora(`Installing ${integration}...`).start();
-    let result;
+    let result: InstallResult;
+    let configChanged = false;
     try {
-      result = await installSingleToolboxPlugin(pluginName, targetPath);
+      const outcome = await installSingleToolboxPlugin(pluginName, targetPath, config);
+      result = outcome.result;
+      configChanged = outcome.configChanged;
     } catch (err) {
       spinner.fail(`Install of ${integration} failed`);
       const reason = err instanceof Error ? err.message : String(err);
       logger.error(`${integration}: ${reason}`);
+      if (configChanged) await writeJson(configPath, config); // persist override even on error
       process.exitCode = 1;
       return;
     }
@@ -66,6 +75,7 @@ export async function addCommand(
     } else {
       spinner.fail(`${integration} install failed`);
       logger.error(`${result.tool}: ${result.message}`);
+      if (configChanged) await writeJson(configPath, config); // persist override even on failure
       process.exitCode = 1;
     }
     return;
