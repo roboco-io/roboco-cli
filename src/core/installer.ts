@@ -236,7 +236,7 @@ export async function installSingleToolboxPlugin(
       remediation.overrideKey === 'claude-md-roboco-block'
     ) {
       logger.info(
-        `Recorded override; existing ${remediation.description} will be replaced on next "roboco update".`,
+        `Recorded override. ROBOCO will not re-emit ${remediation.description} on future runs, but you must remove the existing entry manually if present.`,
       );
     }
   }

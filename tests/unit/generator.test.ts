@@ -28,6 +28,11 @@ function makeAnalysis(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
       hasOmc: false,
       hasRoboco: false,
       hasOpenSpec: false,
+      claudeSettings: null,
+      claudeSkills: [],
+      claudeCommands: [],
+      globalSettings: null,
+      globalSkills: [],
     },
     git: {
       isRepo: true,
@@ -35,6 +40,7 @@ function makeAnalysis(overrides: Partial<AnalysisResult> = {}): AnalysisResult {
       repoName: 'repo',
       branch: 'main',
     },
+    signals: { hasProto: false },
     ...overrides,
   };
 }
