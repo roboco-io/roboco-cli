@@ -1,9 +1,13 @@
 import { join } from 'node:path';
 import { execa } from 'execa';
-import type { AnalysisResult, InterviewResult, RobocoConfig } from '../types/index.js';
+import type { AnalysisResult, InterviewResult, OverrideKey, RobocoConfig } from '../types/index.js';
 import { ensureDir, fileExists, writeText, readText } from '../utils/fs.js';
 import { logger } from '../utils/logger.js';
 import { MARKETPLACE } from './toolbox-bundles.js';
+
+interface GenerateOptions {
+  overrides?: { skipGeneratorOutputs?: OverrideKey[] };
+}
 
 interface FileOperation {
   path: string;
@@ -40,16 +44,18 @@ export async function generate(
   targetPath: string,
   analysis: AnalysisResult,
   interviewResult: InterviewResult,
+  options: GenerateOptions = {},
 ): Promise<string[]> {
+  const skip = new Set<OverrideKey>(options.overrides?.skipGeneratorOutputs ?? []);
   const files: FileOperation[] = [];
 
   // Claude Code Environment (required)
   // Step 1: Run claude /init to generate base CLAUDE.md
   await runClaudeInit(targetPath);
   // Step 2: Append ROBOCO context + generate settings/hooks
-  await appendRobocoContext(targetPath, analysis, interviewResult);
+  await appendRobocoContext(targetPath, analysis, interviewResult, skip);
   // Step 3: Generate .claude/settings.json and hooks
-  files.push(...generateClaudeSettings(targetPath, analysis));
+  files.push(...generateClaudeSettings(targetPath, analysis, skip));
 
   // Process Documents (optional)
   if (interviewResult.setupDomains.processDocs) {
@@ -58,7 +64,7 @@ export async function generate(
 
   // CI/CD (optional)
   if (interviewResult.setupDomains.cicd) {
-    files.push(...generateCicd(targetPath, analysis));
+    files.push(...generateCicd(targetPath, analysis, skip));
   }
 
   // ROBOCO config
@@ -118,7 +124,9 @@ async function appendRobocoContext(
   targetPath: string,
   analysis: AnalysisResult,
   interviewResult: InterviewResult,
+  skip: Set<OverrideKey>,
 ): Promise<void> {
+  if (skip.has('claude-md-roboco-block')) return;
   const claudeMdPath = join(targetPath, 'CLAUDE.md');
   if (!(await fileExists(claudeMdPath))) return;
 
@@ -160,23 +168,30 @@ Run \`roboco status\` to check setup, \`roboco audit\` for maturity scoring.
   logger.success('ROBOCO context appended to CLAUDE.md');
 }
 
-function generateClaudeSettings(targetPath: string, analysis: AnalysisResult): FileOperation[] {
+function generateClaudeSettings(
+  targetPath: string,
+  analysis: AnalysisResult,
+  skip: Set<OverrideKey>,
+): FileOperation[] {
   const hooks = generateHooksForStack(analysis.stack.languages);
+  const allowList = [
+    'Read',
+    'Write',
+    'Edit',
+    'Glob',
+    'Grep',
+    'Bash(npm run *)',
+    'Bash(git status*)',
+    'Bash(git diff*)',
+    'Bash(git log*)',
+  ];
   const robocoDefaults: Record<string, unknown> = {
-    permissions: {
-      allow: [
-        'Read',
-        'Write',
-        'Edit',
-        'Glob',
-        'Grep',
-        'Bash(npm run *)',
-        'Bash(git status*)',
-        'Bash(git diff*)',
-        'Bash(git log*)',
-      ],
-      deny: ['Bash(rm -rf *)', 'Bash(git push --force*)', 'Bash(git reset --hard*)'],
-    },
+    permissions: skip.has('claude-deny-list')
+      ? { allow: allowList }
+      : {
+          allow: allowList,
+          deny: ['Bash(rm -rf *)', 'Bash(git push --force*)', 'Bash(git reset --hard*)'],
+        },
     ...(Object.keys(hooks).length > 0 ? { hooks } : {}),
   };
 
@@ -296,13 +311,18 @@ function generateProcessDocs(targetPath: string): FileOperation[] {
   }));
 }
 
-function generateCicd(targetPath: string, analysis: AnalysisResult): FileOperation[] {
+function generateCicd(
+  targetPath: string,
+  analysis: AnalysisResult,
+  skip: Set<OverrideKey>,
+): FileOperation[] {
   const files: FileOperation[] = [];
 
   // GitHub Actions workflow
-  files.push({
-    path: join(targetPath, '.github', 'workflows', 'vibe-coding-check.yml'),
-    content: `name: Vibe Coding Check
+  if (!skip.has('ci-workflow-vibe-coding-check')) {
+    files.push({
+      path: join(targetPath, '.github', 'workflows', 'vibe-coding-check.yml'),
+      content: `name: Vibe Coding Check
 
 on:
   pull_request:
@@ -318,16 +338,19 @@ jobs:
       - name: Check .claude directory
         run: test -d .claude
 `,
-    description: 'GitHub Actions workflow',
-  });
+      description: 'GitHub Actions workflow',
+    });
+  }
 
   // Pre-commit hook via husky
-  const lintCmd = getLintCommand(analysis.stack.languages);
-  files.push({
-    path: join(targetPath, '.husky', 'pre-commit'),
-    content: `${lintCmd}\n`,
-    description: 'Pre-commit hook',
-  });
+  if (!skip.has('husky-pre-commit')) {
+    const lintCmd = getLintCommand(analysis.stack.languages);
+    files.push({
+      path: join(targetPath, '.husky', 'pre-commit'),
+      content: `${lintCmd}\n`,
+      description: 'Pre-commit hook',
+    });
+  }
 
   return files;
 }
