@@ -3,7 +3,12 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { execa } from 'execa';
 import type { AnalysisResult, ToolSelection } from '../types/index.js';
 import { logger } from '../utils/logger.js';
-import { resolveBundle, MARKETPLACE } from './toolbox-bundles.js';
+import {
+  resolveBundle,
+  MARKETPLACE,
+  KNOWN_PLUGINS,
+  OVERLAPPING_PLUGINS,
+} from './toolbox-bundles.js';
 import { mergeToolboxSettings } from './generator.js';
 
 interface InstallResult {
@@ -161,6 +166,35 @@ export async function installToolbox(analysis: AnalysisResult): Promise<InstallR
     success: installed > 0,
     message: `Installed ${installed}/${bundle.length} plugins. Teammates: run \`roboco install\` to enable.`,
   };
+}
+
+export async function installSingleToolboxPlugin(
+  name: string,
+  targetPath: string,
+): Promise<InstallResult> {
+  if (!KNOWN_PLUGINS.has(name)) {
+    return { tool: `claude-toolbox:${name}`, success: false, message: `Unknown plugin: ${name}` };
+  }
+
+  if (OVERLAPPING_PLUGINS.has(name)) {
+    // Overlap path filled in by Task 10
+    return {
+      tool: `claude-toolbox:${name}`,
+      success: false,
+      message: 'Overlap path not yet implemented',
+    };
+  }
+
+  await writeProjectSettings(targetPath, [name]);
+
+  try {
+    await execa('claude', ['plugin', 'install', `${name}@${MARKETPLACE.name}`], {
+      timeout: 60000,
+    });
+    return { tool: `claude-toolbox:${name}`, success: true, message: 'Installed' };
+  } catch {
+    return { tool: `claude-toolbox:${name}`, success: false, message: 'Install failed' };
+  }
 }
 
 async function writeProjectSettings(targetPath: string, bundle: string[]): Promise<void> {
