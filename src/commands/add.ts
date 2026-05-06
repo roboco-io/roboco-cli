@@ -57,7 +57,7 @@ export async function addCommand(
   (config.interview.tools as unknown as Record<string, boolean>)[tool.key] = true;
 
   const spinner = ora(`Installing ${integration}...`).start();
-  const results = await installTools(config.interview.tools);
+  const results = await installTools(config.interview.tools, config.analysis);
   const thisResult = results.find((r) => r.tool.toLowerCase().includes(integration.toLowerCase()));
   spinner.succeed(`${integration} installation complete`);
 

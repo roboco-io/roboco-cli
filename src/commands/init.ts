@@ -72,7 +72,7 @@ export async function initCommand(path: string | undefined, options: InitOptions
   // Phase 4: Install tools
   logger.blank();
   const installSpinner = ora('Installing tools...').start();
-  const installResults = await installTools(interviewResult.tools);
+  const installResults = await installTools(interviewResult.tools, analysis);
   installSpinner.succeed('Tool installation complete');
   printInstallReport(installResults);
 

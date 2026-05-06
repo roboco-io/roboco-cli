@@ -24,7 +24,7 @@ export async function installCommand(path: string | undefined): Promise<void> {
   logger.info(`Initialized: ${config.createdAt}`);
 
   const installSpinner = ora('Installing tools from configuration...').start();
-  const results = await installTools(config.interview.tools);
+  const results = await installTools(config.interview.tools, config.analysis);
   installSpinner.succeed('Installation complete');
 
   printInstallReport(results);
