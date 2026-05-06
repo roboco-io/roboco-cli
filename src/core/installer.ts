@@ -206,23 +206,24 @@ export async function installSingleToolboxPlugin(
       `This replaces ROBOCO's ${remediation.description}. Drop ROBOCO's version?`,
       false,
     );
-    if (acceptedOverlap) {
-      try {
-        await remediation.cleanup(targetPath);
-      } catch {
-        logger.warn(`Cleanup of ${remediation.description} failed — continuing`);
-      }
-    } else {
+    if (!acceptedOverlap) {
       logger.warn('Both will coexist — manual cleanup may be needed.');
     }
   }
 
-  // writeProjectSettings must succeed before we mutate in-memory config —
-  // prevents half-migrated state on filesystem errors (EROFS, EACCES).
+  // writeProjectSettings must succeed before destructive cleanup or in-memory
+  // config mutation — prevents the user ending up with files removed and no
+  // record of the toolbox plugin on filesystem errors (EROFS, EACCES).
   await writeProjectSettings(targetPath, [name]);
 
-  // Override recording: only after writeProjectSettings succeeds, only if user accepted.
+  // Cleanup runs only after settings have been persisted; a cleanup failure
+  // is tolerated (warn, continue) since settings already record intent.
   if (remediation && acceptedOverlap) {
+    try {
+      await remediation.cleanup(targetPath);
+    } catch {
+      logger.warn(`Cleanup of ${remediation.description} failed — continuing`);
+    }
     config.overrides ??= {};
     config.overrides.skipGeneratorOutputs ??= [];
     if (!config.overrides.skipGeneratorOutputs.includes(remediation.overrideKey)) {

@@ -24,8 +24,13 @@ export function mergeToolboxSettings(
 
   const marketplaces = (result['extraKnownMarketplaces'] ?? {}) as Record<string, unknown>;
   const newMarketplaces = { ...marketplaces };
-  if (!newMarketplaces[MARKETPLACE.name]) {
+  const existingEntry = newMarketplaces[MARKETPLACE.name] as { source?: unknown } | undefined;
+  if (!existingEntry) {
     newMarketplaces[MARKETPLACE.name] = { source: MARKETPLACE.source };
+  } else if (JSON.stringify(existingEntry.source) !== JSON.stringify(MARKETPLACE.source)) {
+    logger.warn(
+      `extraKnownMarketplaces['${MARKETPLACE.name}'] has a custom source — leaving it unchanged.`,
+    );
   }
   result['extraKnownMarketplaces'] = newMarketplaces;
 
