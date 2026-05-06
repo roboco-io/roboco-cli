@@ -160,3 +160,83 @@ describe('generator', () => {
     expect(count).toBe(1);
   });
 });
+
+describe('generator skipGeneratorOutputs', () => {
+  let tempDir: string;
+
+  beforeEach(async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'roboco-skip-'));
+  });
+
+  afterEach(async () => {
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('skips husky pre-commit when override is set', async () => {
+    await seedClaudeMd(tempDir);
+    const interview = makeInterview({
+      setupDomains: { claudeEnv: true, processDocs: false, cicd: true },
+    });
+    await generate(tempDir, makeAnalysis({ path: tempDir }), interview, {
+      overrides: { skipGeneratorOutputs: ['husky-pre-commit'] },
+    });
+    let huskyExists = true;
+    try {
+      await readFile(join(tempDir, '.husky', 'pre-commit'), 'utf-8');
+    } catch {
+      huskyExists = false;
+    }
+    expect(huskyExists).toBe(false);
+  });
+
+  it('writes husky pre-commit when override is absent', async () => {
+    await seedClaudeMd(tempDir);
+    const interview = makeInterview({
+      setupDomains: { claudeEnv: true, processDocs: false, cicd: true },
+    });
+    await generate(tempDir, makeAnalysis({ path: tempDir }), interview);
+    const content = await readFile(join(tempDir, '.husky', 'pre-commit'), 'utf-8');
+    expect(content.length).toBeGreaterThan(0);
+  });
+
+  it('skips ci-workflow when override is set', async () => {
+    await seedClaudeMd(tempDir);
+    const interview = makeInterview({
+      setupDomains: { claudeEnv: true, processDocs: false, cicd: true },
+    });
+    await generate(tempDir, makeAnalysis({ path: tempDir }), interview, {
+      overrides: { skipGeneratorOutputs: ['ci-workflow-vibe-coding-check'] },
+    });
+    let ciExists = true;
+    try {
+      await readFile(join(tempDir, '.github', 'workflows', 'vibe-coding-check.yml'), 'utf-8');
+    } catch {
+      ciExists = false;
+    }
+    expect(ciExists).toBe(false);
+  });
+
+  it('skips claude deny list entries when override is set', async () => {
+    await seedClaudeMd(tempDir);
+    const interview = makeInterview({
+      setupDomains: { claudeEnv: true, processDocs: false, cicd: false },
+    });
+    await generate(tempDir, makeAnalysis({ path: tempDir }), interview, {
+      overrides: { skipGeneratorOutputs: ['claude-deny-list'] },
+    });
+    const settings = JSON.parse(await readFile(join(tempDir, '.claude', 'settings.json'), 'utf-8'));
+    expect(settings.permissions.deny ?? []).toEqual([]);
+  });
+
+  it('skips <roboco> block in CLAUDE.md when override is set', async () => {
+    await writeFile(join(tempDir, 'CLAUDE.md'), '# Test project\n\nProject overview.\n');
+    const interview = makeInterview({
+      setupDomains: { claudeEnv: true, processDocs: false, cicd: false },
+    });
+    await generate(tempDir, makeAnalysis({ path: tempDir }), interview, {
+      overrides: { skipGeneratorOutputs: ['claude-md-roboco-block'] },
+    });
+    const claudeMd = await readFile(join(tempDir, 'CLAUDE.md'), 'utf-8');
+    expect(claudeMd).not.toContain('<roboco>');
+  });
+});

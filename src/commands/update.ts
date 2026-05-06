@@ -32,12 +32,15 @@ export async function updateCommand(
 
   const interviewResult = await interview(analysis, { auto: options.auto ?? false });
 
+  const existing = await readJson<RobocoConfig>(configPath);
+
   const genSpinner = ora('Updating configuration...').start();
-  const created = await generate(targetPath, analysis, interviewResult);
+  const created = await generate(targetPath, analysis, interviewResult, {
+    overrides: existing.overrides,
+  });
   genSpinner.succeed(`Updated ${created.length} files`);
 
   // Update config
-  const existing = await readJson<RobocoConfig>(configPath);
   existing.updatedAt = new Date().toISOString();
   existing.analysis = analysis;
   existing.interview = interviewResult;
