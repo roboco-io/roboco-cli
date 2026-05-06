@@ -131,3 +131,40 @@ describe('roboco add toolbox:<plugin>', () => {
     await rm(tempDir, { recursive: true, force: true });
   });
 });
+
+describe('roboco add toolbox:<overlap-plugin>', () => {
+  beforeEach(() => {
+    execaMock.mockReset();
+    execaMock.mockResolvedValue({ stdout: '', stderr: '' });
+  });
+
+  it('records skipGeneratorOutputs override when user accepts drop-replace', async () => {
+    const tempDir = await fixture();
+    // simulate user accepting the prompt
+    const promptModule = await import('../../src/utils/prompt.js');
+    vi.spyOn(promptModule, 'confirm').mockResolvedValue(true);
+
+    await addCommand('toolbox:gabyx-githooks-setup', { path: tempDir });
+
+    const cfg = JSON.parse(await readFile(join(tempDir, '.roboco', 'config.json'), 'utf-8'));
+    expect(cfg.overrides?.skipGeneratorOutputs).toContain('husky-pre-commit');
+    expect(cfg.installedTools).toContain('toolbox:gabyx-githooks-setup');
+
+    vi.restoreAllMocks();
+    await rm(tempDir, { recursive: true, force: true });
+  });
+
+  it('does not record override when user declines drop-replace', async () => {
+    const tempDir = await fixture();
+    const promptModule = await import('../../src/utils/prompt.js');
+    vi.spyOn(promptModule, 'confirm').mockResolvedValue(false);
+
+    await addCommand('toolbox:gabyx-githooks-setup', { path: tempDir });
+
+    const cfg = JSON.parse(await readFile(join(tempDir, '.roboco', 'config.json'), 'utf-8'));
+    expect(cfg.overrides?.skipGeneratorOutputs ?? []).not.toContain('husky-pre-commit');
+
+    vi.restoreAllMocks();
+    await rm(tempDir, { recursive: true, force: true });
+  });
+});

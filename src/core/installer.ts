@@ -1,17 +1,19 @@
 import { join } from 'node:path';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { execa } from 'execa';
-import type { AnalysisResult, ToolSelection } from '../types/index.js';
+import type { AnalysisResult, RobocoConfig, ToolSelection } from '../types/index.js';
 import { logger } from '../utils/logger.js';
 import {
   resolveBundle,
   MARKETPLACE,
   KNOWN_PLUGINS,
   OVERLAPPING_PLUGINS,
+  OVERLAP_REMEDIATION,
 } from './toolbox-bundles.js';
+import { confirm } from '../utils/prompt.js';
 import { mergeToolboxSettings } from './generator.js';
 
-interface InstallResult {
+export interface InstallResult {
   tool: string;
   success: boolean;
   message: string;
@@ -171,29 +173,67 @@ export async function installToolbox(analysis: AnalysisResult): Promise<InstallR
 export async function installSingleToolboxPlugin(
   name: string,
   targetPath: string,
-): Promise<InstallResult> {
+  config: RobocoConfig,
+): Promise<{ result: InstallResult; configChanged: boolean }> {
   if (!KNOWN_PLUGINS.has(name)) {
-    return { tool: `claude-toolbox:${name}`, success: false, message: `Unknown plugin: ${name}` };
+    return {
+      result: {
+        tool: `claude-toolbox:${name}`,
+        success: false,
+        message: `Unknown plugin: ${name}`,
+      },
+      configChanged: false,
+    };
   }
 
+  let configChanged = false;
+
   if (OVERLAPPING_PLUGINS.has(name)) {
-    // Overlap path filled in by Task 10
-    return {
-      tool: `claude-toolbox:${name}`,
-      success: false,
-      message: 'Overlap path not yet implemented',
-    };
+    const remediation = OVERLAP_REMEDIATION[name];
+    if (!remediation) {
+      return {
+        result: {
+          tool: `claude-toolbox:${name}`,
+          success: false,
+          message: `No remediation for overlap: ${name}`,
+        },
+        configChanged: false,
+      };
+    }
+    const accepted = await confirm(
+      `This replaces ROBOCO's ${remediation.description}. Drop ROBOCO's version?`,
+      false,
+    );
+    if (accepted) {
+      try {
+        await remediation.cleanup(targetPath);
+      } catch {
+        logger.warn(`Cleanup of ${remediation.description} failed — continuing`);
+      }
+      config.overrides ??= {};
+      config.overrides.skipGeneratorOutputs ??= [];
+      if (!config.overrides.skipGeneratorOutputs.includes(remediation.overrideKey)) {
+        config.overrides.skipGeneratorOutputs.push(remediation.overrideKey);
+      }
+      configChanged = true;
+    } else {
+      logger.warn('Both will coexist — manual cleanup may be needed.');
+    }
   }
 
   await writeProjectSettings(targetPath, [name]);
 
   try {
-    await execa('claude', ['plugin', 'install', `${name}@${MARKETPLACE.name}`], {
-      timeout: 60000,
-    });
-    return { tool: `claude-toolbox:${name}`, success: true, message: 'Installed' };
+    await execa('claude', ['plugin', 'install', `${name}@${MARKETPLACE.name}`], { timeout: 60000 });
+    return {
+      result: { tool: `claude-toolbox:${name}`, success: true, message: 'Installed' },
+      configChanged,
+    };
   } catch {
-    return { tool: `claude-toolbox:${name}`, success: false, message: 'Install failed' };
+    return {
+      result: { tool: `claude-toolbox:${name}`, success: false, message: 'Install failed' },
+      configChanged,
+    };
   }
 }
 
