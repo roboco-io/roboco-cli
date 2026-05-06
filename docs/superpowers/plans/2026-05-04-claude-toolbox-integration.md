@@ -1752,4 +1752,28 @@ No spec section is unaddressed.
 - `installSingleToolboxPlugin` — Task 9 returns `InstallResult`, Task 10 changes return shape to `{ result, configChanged }`. The Task 10 step explicitly updates the caller. ✓
 - `mergeToolboxSettings(existing, bundle)` — same signature in Task 4 (definition), Task 5 (called via `writeProjectSettings`). ✓
 - `RepoSignals.hasProto` — defined in Task 1, populated in Task 3, consumed in Tasks 2 and 7. ✓
+
+---
+
+## Verification Gate Status
+
+The implementation assumes Claude Code honors project-level `.claude/settings.json` `enabledPlugins` and auto-fetches the `extraKnownMarketplaces` entry on first run for teammates.
+
+**Manual smoke test required before merge:**
+
+1. Build CLI: `npm run build`
+2. Create a clean tempdir: `mkdir /tmp/roboco-smoke && cd /tmp/roboco-smoke && echo "print('hi')" > main.py` (Python repo so toolbox shows core-only)
+3. Run: `node /Users/jaehyun/go/src/github.com/roboco-io/roboco-cli/dist/index.js init --auto .`
+4. Verify `.claude/settings.json` contains `extraKnownMarketplaces` and `enabledPlugins` keys.
+5. Move user-global Claude settings aside: `mv ~/.claude/settings.json ~/.claude/settings.json.bak`
+6. Launch Claude Code in `/tmp/roboco-smoke`: `claude`
+7. Inside Claude Code, check active plugins: `/plugin list`
+8. Confirm the toolbox plugins listed in the project settings are active.
+9. Restore: `mv ~/.claude/settings.json.bak ~/.claude/settings.json`
+
+**If verified:** the design as implemented is correct.
+
+**If not verified:** the spec's verification gate documents a fallback to subprocess-only install. Update `installToolbox` to also drive `roboco install` on the teammate's machine. File a follow-up issue.
+
+This smoke test is intentionally NOT automated because it modifies user-global state.
 - `OverrideKey` — defined in Task 1, used in Tasks 10, 11. Same union members in both. ✓

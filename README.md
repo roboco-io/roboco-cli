@@ -151,6 +151,8 @@ Analyze and show recommendations without making any changes.
 | `roboco doctor` | Diagnose ROBOCO CLI health (version, SDK, dependencies) |
 | `roboco config` | View and modify global ROBOCO configuration |
 | `roboco add <integration>` | Add a tool post-init (openspec, exa, github, context7, harness) |
+| `roboco add toolbox` | Install full claude-toolbox bundle (stack-aware) |
+| `roboco add toolbox:<plugin>` | Install a single claude-toolbox plugin (with overlap drop-replace prompt) |
 | `roboco sync [--check]` | Detect configuration drift (CI-friendly with `--check`) |
 | `roboco validate [--fix]` | End-to-end setup validation |
 | `roboco audit [--format]` | Vibe coding maturity scoring (100 points, 5 categories) |
@@ -178,6 +180,7 @@ Analyze and show recommendations without making any changes.
 | Harness | Domain-specific agent team design (6 architecture patterns) |
 | CI/CD pipeline | Pre-commit hooks + GitHub Actions workflows |
 | Process templates | 5-stage vibe coding document templates |
+| claude-toolbox | Stack-aware bundle (next-action, todo, gh-issue-resolver, semgrep-review, sandbox-helpers, makefile-workflow + stack overlay) |
 
 ## Tech Stack
 
