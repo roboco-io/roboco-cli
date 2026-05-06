@@ -167,4 +167,21 @@ describe('roboco add toolbox:<overlap-plugin>', () => {
     vi.restoreAllMocks();
     await rm(tempDir, { recursive: true, force: true });
   });
+
+  it('does not record override if writeProjectSettings throws', async () => {
+    const tempDir = await fixture();
+    const promptModule = await import('../../src/utils/prompt.js');
+    vi.spyOn(promptModule, 'confirm').mockResolvedValue(true);
+
+    // Make .claude into a file (not directory) so mkdir(.claude) fails
+    await writeFile(join(tempDir, '.claude'), 'blocking file');
+
+    await addCommand('toolbox:gabyx-githooks-setup', { path: tempDir });
+
+    const cfg = JSON.parse(await readFile(join(tempDir, '.roboco', 'config.json'), 'utf-8'));
+    expect(cfg.overrides?.skipGeneratorOutputs ?? []).not.toContain('husky-pre-commit');
+
+    vi.restoreAllMocks();
+    await rm(tempDir, { recursive: true, force: true });
+  });
 });
