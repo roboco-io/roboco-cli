@@ -187,41 +187,59 @@ export async function installSingleToolboxPlugin(
   }
 
   let configChanged = false;
+  let acceptedOverlap = false;
+  const remediation = OVERLAPPING_PLUGINS.has(name) ? OVERLAP_REMEDIATION[name] : undefined;
 
-  if (OVERLAPPING_PLUGINS.has(name)) {
-    const remediation = OVERLAP_REMEDIATION[name];
-    if (!remediation) {
-      return {
-        result: {
-          tool: `claude-toolbox:${name}`,
-          success: false,
-          message: `No remediation for overlap: ${name}`,
-        },
-        configChanged: false,
-      };
-    }
-    const accepted = await confirm(
+  if (OVERLAPPING_PLUGINS.has(name) && !remediation) {
+    return {
+      result: {
+        tool: `claude-toolbox:${name}`,
+        success: false,
+        message: `No remediation for overlap: ${name}`,
+      },
+      configChanged: false,
+    };
+  }
+
+  if (remediation) {
+    acceptedOverlap = await confirm(
       `This replaces ROBOCO's ${remediation.description}. Drop ROBOCO's version?`,
       false,
     );
-    if (accepted) {
+    if (acceptedOverlap) {
       try {
         await remediation.cleanup(targetPath);
       } catch {
         logger.warn(`Cleanup of ${remediation.description} failed — continuing`);
       }
-      config.overrides ??= {};
-      config.overrides.skipGeneratorOutputs ??= [];
-      if (!config.overrides.skipGeneratorOutputs.includes(remediation.overrideKey)) {
-        config.overrides.skipGeneratorOutputs.push(remediation.overrideKey);
-      }
-      configChanged = true;
     } else {
       logger.warn('Both will coexist — manual cleanup may be needed.');
     }
   }
 
+  // writeProjectSettings must succeed before we mutate in-memory config —
+  // prevents half-migrated state on filesystem errors (EROFS, EACCES).
   await writeProjectSettings(targetPath, [name]);
+
+  // Override recording: only after writeProjectSettings succeeds, only if user accepted.
+  if (remediation && acceptedOverlap) {
+    config.overrides ??= {};
+    config.overrides.skipGeneratorOutputs ??= [];
+    if (!config.overrides.skipGeneratorOutputs.includes(remediation.overrideKey)) {
+      config.overrides.skipGeneratorOutputs.push(remediation.overrideKey);
+    }
+    configChanged = true;
+
+    // Surface deferred-cleanup intent to the user for no-op remediation entries.
+    if (
+      remediation.overrideKey === 'claude-deny-list' ||
+      remediation.overrideKey === 'claude-md-roboco-block'
+    ) {
+      logger.info(
+        `Recorded override; existing ${remediation.description} will be replaced on next "roboco update".`,
+      );
+    }
+  }
 
   try {
     await execa('claude', ['plugin', 'install', `${name}@${MARKETPLACE.name}`], { timeout: 60000 });
