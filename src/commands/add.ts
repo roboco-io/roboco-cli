@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 import ora from 'ora';
 import { fileExists, readJson, writeJson } from '../utils/fs.js';
-import { installTools } from '../core/installer.js';
+import { installTools, installToolbox } from '../core/installer.js';
 import { logger } from '../utils/logger.js';
 import type { RobocoConfig, ToolSelection } from '../types/index.js';
 
@@ -12,6 +12,7 @@ const KNOWN_TOOLS: Record<string, { key: keyof ToolSelection; description: strin
   github: { key: 'githubMcp', description: 'Issue/PR management (GitHub MCP)' },
   context7: { key: 'context7', description: 'Up-to-date library docs (Context7 MCP)' },
   harness: { key: 'harness', description: 'Domain-specific agent team design' },
+  toolbox: { key: 'toolbox', description: 'claude-toolbox bundle (stack-aware)' },
 };
 
 export async function addCommand(
@@ -47,6 +48,21 @@ export async function addCommand(
   }
 
   const config = await readJson<RobocoConfig>(configPath);
+
+  if (integration.toLowerCase() === 'toolbox') {
+    const spinner = ora('Installing claude-toolbox bundle...').start();
+    const result = await installToolbox(config.analysis);
+    spinner.succeed('claude-toolbox bundle install complete');
+    if (result.success) logger.success(`${result.tool}: ${result.message}`);
+    else logger.warn(`${result.tool}: ${result.message}`);
+
+    config.interview.tools.toolbox = true;
+    config.updatedAt = new Date().toISOString();
+    if (!config.installedTools.includes('toolbox')) config.installedTools.push('toolbox');
+    await writeJson(configPath, config);
+    logger.success('Configuration updated.');
+    return;
+  }
 
   if (config.interview.tools[tool.key]) {
     logger.warn(`${integration} is already enabled.`);
